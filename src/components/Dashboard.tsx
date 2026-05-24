@@ -145,21 +145,21 @@ export default function Dashboard({ data, onDataChange, refreshKey, syncStatus }
   return (
     <main className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,#e0f2fe_0,#f8fafc_34%,#fff7ed_72%,#f8fafc_100%)] px-4 py-4 text-slate-900 sm:px-6 lg:px-8">
       <div className="mx-auto flex max-w-[1500px] flex-col gap-5">
-        <header className="flex flex-col gap-4 rounded-[2rem] border border-white/70 bg-white/60 px-5 py-5 shadow-glass backdrop-blur-2xl md:flex-row md:items-center md:justify-between md:px-8">
+        <header className="flex flex-col gap-4 rounded-[2rem] border border-white/70 bg-white/60 px-5 py-4 shadow-glass backdrop-blur-2xl md:flex-row md:items-start md:justify-between md:px-8">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-sky-700">
               Happy Familly
             </p>
-            <h1 className="mt-1 text-3xl font-bold text-slate-950 sm:text-4xl">
+            <h1 className="mt-1 text-3xl font-bold leading-tight text-slate-950 sm:text-4xl">
               Bonjour la famille
             </h1>
-            <p className="mt-2 text-lg capitalize text-slate-600">{now}</p>
+            <p className="mt-1 text-lg capitalize text-slate-600">{now}</p>
             {nextHours.length > 0 && (
-              <div className="mt-4 flex flex-wrap gap-2">
+              <div className="mt-3 flex max-w-3xl flex-wrap gap-2">
                 {nextHours.map((hour) => (
                   <span
                     key={hour.time}
-                    className="rounded-2xl bg-white px-3 py-2 text-sm font-bold text-slate-700"
+                    className="rounded-2xl bg-white/85 px-3 py-1.5 text-sm font-black text-slate-700 shadow-sm"
                   >
                     {getHourlyEmoji(hour.rain)} {hour.time} · {hour.temperature}°C · pluie {hour.rain}%
                   </span>
