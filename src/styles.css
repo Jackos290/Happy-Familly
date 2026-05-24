@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color: #172033;
+  background: #f8fafc;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+@layer components {
+  .glass-panel {
+    @apply border border-white/65 bg-white/72 shadow-glass backdrop-blur-2xl;
+  }
+
+  .field {
+    @apply min-h-12 w-full rounded-2xl border border-slate-200/80 bg-white/80 px-4 text-base text-slate-800 outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100;
+  }
+
+  .icon-button {
+    @apply inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-white transition hover:bg-slate-700 active:scale-95;
+  }
+}
