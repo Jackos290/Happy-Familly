@@ -7,7 +7,11 @@ import {
   saveRemoteAppData,
   subscribeToRemoteAppData,
 } from "./utils/remoteData";
-import { isSupabaseConfigured } from "./utils/supabase";
+import {
+  isSupabaseConfigured,
+  supabaseDebugInfo,
+  testSupabaseConnection,
+} from "./utils/supabase";
 
 export default function App() {
   const [data, setData] = useState<AppData>(() => loadAppData());
@@ -40,6 +44,14 @@ export default function App() {
     let mounted = true;
 
     async function hydrateRemoteData() {
+      const connectionError = await testSupabaseConnection();
+      if (!mounted) return;
+
+      if (connectionError) {
+        setSyncStatus(`Erreur Supabase (${supabaseDebugInfo.urlHost}): ${connectionError}`);
+        return;
+      }
+
       const { data: remoteData, error } = await loadRemoteAppData();
       if (!mounted) return;
 
