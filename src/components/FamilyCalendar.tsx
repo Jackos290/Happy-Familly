@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import type { AppData, CalendarEvent } from "../types";
 import { getSpecialEventsForDashboard, getSpecialEventsForRange } from "../utils/calendarSpecialDays";
 import { createId } from "../utils/localStorage";
+import MemberBadge from "./MemberBadge";
 
 type Props = {
   data: AppData;
@@ -164,11 +165,7 @@ function CalendarForm({
       <input className="field" value={title} onChange={(event) => onTitleChange(event.target.value)} placeholder="Ajouter un événement ou rendez-vous" />
       <input className="field" type="date" value={date} onChange={(event) => onDateChange(event.target.value)} />
       <input className="field" type="time" value={time} onChange={(event) => onTimeChange(event.target.value)} />
-      <select className="field" value={personId} onChange={(event) => onPersonChange(event.target.value)}>
-        {data.familyMembers.map((member) => (
-          <option key={member.id} value={member.id}>{member.name}</option>
-        ))}
-      </select>
+      <MemberSelect data={data} value={personId} onChange={onPersonChange} />
       <button className="icon-button" title="Ajouter l'événement">
         <Plus className="h-5 w-5" />
       </button>
@@ -235,7 +232,7 @@ function EventColumn({ title, events, data }: { title: string; events: CalendarE
               <p className="font-bold text-slate-900">{event.title}</p>
               <time className="rounded-full bg-slate-100 px-3 py-1 text-sm font-bold">{event.time}</time>
             </div>
-            <MemberBadge event={event} data={data} />
+            <EventMember event={event} data={data} />
           </div>
         ))}
       </div>
@@ -248,18 +245,36 @@ function EventPill({ event, data }: { event: CalendarEvent; data: AppData }) {
     <div className="truncate rounded-xl bg-slate-100 px-2 py-1 text-xs font-bold text-slate-700">
       {event.time !== "Toute la journée" && `${event.time} · `}
       {event.title}
-      <MemberBadge event={event} data={data} small />
+      <EventMember event={event} data={data} small />
     </div>
   );
 }
 
-function MemberBadge({ event, data, small = false }: { event: CalendarEvent; data: AppData; small?: boolean }) {
+function EventMember({ event, data, small = false }: { event: CalendarEvent; data: AppData; small?: boolean }) {
   const member = data.familyMembers.find((item) => item.id === event.personId);
-  if (!member) return null;
+  return <MemberBadge member={member} size={small ? "sm" : "md"} className={small ? "ml-2" : "mt-2"} />;
+}
+
+function MemberSelect({
+  data,
+  value,
+  onChange,
+}: {
+  data: AppData;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const member = data.familyMembers.find((item) => item.id === value);
+
   return (
-    <span className={`mt-2 inline-flex rounded-full px-3 py-1 font-bold ${small ? "ml-2 text-[10px]" : "text-xs"} ${member.color}`}>
-      {member.name}
-    </span>
+    <div className="flex items-center gap-2">
+      <MemberBadge member={member} size="sm" />
+      <select className="field min-h-11 flex-1" value={value} onChange={(event) => onChange(event.target.value)}>
+        {data.familyMembers.map((item) => (
+          <option key={item.id} value={item.id}>{item.name}</option>
+        ))}
+      </select>
+    </div>
   );
 }
 

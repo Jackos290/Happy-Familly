@@ -3,6 +3,7 @@ import { FormEvent, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import type { AppData, Task } from "../types";
 import { createId } from "../utils/localStorage";
+import MemberBadge from "./MemberBadge";
 
 type Props = {
   data: AppData;
@@ -78,9 +79,7 @@ export default function TaskBoard({ data, onDataChange, expanded = false }: Prop
             const memberTasks = data.tasks.filter((task) => task.personId === member.id && !task.done);
             return (
               <div key={member.id} className="rounded-3xl bg-white/50 p-3">
-                <span className={`mb-3 inline-flex rounded-full px-3 py-1 text-sm font-bold ${member.color}`}>
-                  {member.name}
-                </span>
+                <MemberBadge member={member} className="mb-3" />
                 <TaskList
                   data={data}
                   tasks={memberTasks.slice(0, 4)}
@@ -173,13 +172,7 @@ function TaskForm({
         onChange={(event) => onTitleChange(event.target.value)}
         placeholder="Nouvelle tâche"
       />
-      <select className="field" value={personId} onChange={(event) => onPersonChange(event.target.value)}>
-        {data.familyMembers.map((member) => (
-          <option key={member.id} value={member.id}>
-            {member.name}
-          </option>
-        ))}
-      </select>
+      <MemberSelect data={data} value={personId} onChange={onPersonChange} />
       <select
         className="field"
         value={recurrence}
@@ -238,17 +231,7 @@ function TaskList({
           </button>
 
           {!compact && (
-            <select
-              className="field min-h-11"
-              value={task.personId}
-              onChange={(event) => onUpdate(task.id, { personId: event.target.value })}
-            >
-              {data.familyMembers.map((member) => (
-                <option key={member.id} value={member.id}>
-                  {member.name}
-                </option>
-              ))}
-            </select>
+            <MemberSelect data={data} value={task.personId} onChange={(value) => onUpdate(task.id, { personId: value })} />
           )}
 
           <div className="flex items-center justify-between gap-2">
@@ -269,6 +252,31 @@ function TaskList({
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+function MemberSelect({
+  data,
+  value,
+  onChange,
+}: {
+  data: AppData;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const member = data.familyMembers.find((item) => item.id === value);
+
+  return (
+    <div className="flex items-center gap-2">
+      <MemberBadge member={member} size="sm" />
+      <select className="field min-h-11 flex-1" value={value} onChange={(event) => onChange(event.target.value)}>
+        {data.familyMembers.map((item) => (
+          <option key={item.id} value={item.id}>
+            {item.name}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }
