@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import type { AppData, CalendarEvent } from "../types";
 import { getSpecialEventsForDashboard, getSpecialEventsForRange } from "../utils/calendarSpecialDays";
@@ -10,20 +10,23 @@ type Props = {
   data: AppData;
   onDataChange: (data: AppData) => void;
   expanded?: boolean;
+  selectedMemberId?: string | null;
 };
 
 type CalendarView = "month" | "week" | "day";
 
-export default function FamilyCalendar({ data, onDataChange, expanded = false }: Props) {
+export default function FamilyCalendar({ data, onDataChange, expanded = false, selectedMemberId = null }: Props) {
   const [title, setTitle] = useState("");
   const [time, setTime] = useState("17:00");
   const [date, setDate] = useState(toDateKey(new Date()));
-  const [personId, setPersonId] = useState(data.familyMembers[0]?.id ?? "");
+  const [personId, setPersonId] = useState(selectedMemberId ?? data.familyMembers[0]?.id ?? "");
   const [view, setView] = useState<CalendarView>("month");
   const [cursorDate, setCursorDate] = useState(new Date());
 
   const dashboardEventsByDate = useMemo(() => {
-    const events = [...getSpecialEventsForDashboard(), ...data.calendarEvents];
+    const events = [...getSpecialEventsForDashboard(), ...data.calendarEvents].filter((event) =>
+      matchesSelectedMember(event, selectedMemberId),
+    );
 
     return {
       today: events
@@ -37,18 +40,26 @@ export default function FamilyCalendar({ data, onDataChange, expanded = false }:
         })
         .sort((a, b) => a.time.localeCompare(b.time)),
     };
-  }, [data.calendarEvents]);
+  }, [data.calendarEvents, selectedMemberId]);
 
   const range = getViewRange(cursorDate, view);
   const rangeEvents = useMemo(() => {
-    const events = [...getSpecialEventsForRange(range.start, range.end), ...data.calendarEvents];
+    const events = [...getSpecialEventsForRange(range.start, range.end), ...data.calendarEvents].filter((event) =>
+      matchesSelectedMember(event, selectedMemberId),
+    );
     return events
       .filter((event) => {
         const eventDate = getEventDateKey(event);
         return eventDate >= toDateKey(range.start) && eventDate <= toDateKey(range.end);
       })
       .sort((a, b) => `${getEventDateKey(a)} ${a.time}`.localeCompare(`${getEventDateKey(b)} ${b.time}`));
-  }, [data.calendarEvents, range.start, range.end]);
+  }, [data.calendarEvents, range.start, range.end, selectedMemberId]);
+
+  useEffect(() => {
+    if (selectedMemberId) {
+      setPersonId(selectedMemberId);
+    }
+  }, [selectedMemberId]);
 
   function addEvent(event: FormEvent) {
     event.preventDefault();
@@ -291,6 +302,10 @@ function getEventDateKey(event: CalendarEvent) {
   const date = new Date();
   if (event.date === "tomorrow") date.setDate(date.getDate() + 1);
   return toDateKey(date);
+}
+
+function matchesSelectedMember(event: CalendarEvent, selectedMemberId: string | null) {
+  return !selectedMemberId || event.personId === selectedMemberId;
 }
 
 function getViewRange(date: Date, view: CalendarView) {

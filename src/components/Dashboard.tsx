@@ -53,6 +53,9 @@ export default function Dashboard({ data, onDataChange, refreshKey, syncStatus }
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [expandedPanel, setExpandedPanel] = useState<PanelId | null>(null);
   const [nextHours, setNextHours] = useState<HourlyForecast[]>([]);
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
+
+  const selectedMember = data.familyMembers.find((member) => member.id === selectedMemberId);
 
   const now = new Intl.DateTimeFormat("fr-FR", {
     weekday: "long",
@@ -115,6 +118,30 @@ export default function Dashboard({ data, onDataChange, refreshKey, syncStatus }
     void loadHeaderForecast();
   }, [refreshKey]);
 
+  useEffect(() => {
+    if (!selectedMemberId) return;
+
+    let timeout = window.setTimeout(() => {
+      setSelectedMemberId(null);
+    }, 60_000);
+
+    function resetFilterTimeout() {
+      window.clearTimeout(timeout);
+      timeout = window.setTimeout(() => {
+        setSelectedMemberId(null);
+      }, 60_000);
+    }
+
+    window.addEventListener("pointerdown", resetFilterTimeout);
+    window.addEventListener("keydown", resetFilterTimeout);
+
+    return () => {
+      window.clearTimeout(timeout);
+      window.removeEventListener("pointerdown", resetFilterTimeout);
+      window.removeEventListener("keydown", resetFilterTimeout);
+    };
+  }, [selectedMemberId]);
+
   return (
     <main className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,#e0f2fe_0,#f8fafc_34%,#fff7ed_72%,#f8fafc_100%)] px-4 py-4 text-slate-900 sm:px-6 lg:px-8">
       <div className="mx-auto flex max-w-[1500px] flex-col gap-5">
@@ -142,10 +169,13 @@ export default function Dashboard({ data, onDataChange, refreshKey, syncStatus }
           </div>
           <div className="flex flex-wrap items-center gap-3">
             {data.familyMembers.map((member) => (
-              <span
+              <button
                 key={member.id}
-                className="inline-flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-white shadow-sm"
-                title={member.name}
+                onClick={() => setSelectedMemberId((current) => (current === member.id ? null : member.id))}
+                className={`inline-flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-white shadow-sm ring-offset-2 transition ${
+                  selectedMemberId === member.id ? "ring-4 ring-slate-950" : "ring-0 hover:ring-2 hover:ring-slate-200"
+                }`}
+                title={`Voir seulement ${member.name}`}
               >
                 {member.photoUrl ? (
                   <img src={member.photoUrl} alt={member.name} className="h-full w-full object-cover" />
@@ -154,7 +184,7 @@ export default function Dashboard({ data, onDataChange, refreshKey, syncStatus }
                     {member.name.slice(0, 1).toUpperCase()}
                   </span>
                 )}
-              </span>
+              </button>
             ))}
             <button
               onClick={() => setSettingsOpen(true)}
@@ -179,14 +209,25 @@ export default function Dashboard({ data, onDataChange, refreshKey, syncStatus }
         <p className="sr-only" aria-live="polite">
           {tabletModeMessage}
         </p>
+        {selectedMember && (
+          <div className="flex items-center justify-between gap-3 rounded-3xl bg-slate-950 px-5 py-3 text-white shadow-glass">
+            <p className="font-bold">Vue filtrée : {selectedMember.name}</p>
+            <button
+              onClick={() => setSelectedMemberId(null)}
+              className="rounded-full bg-white/15 px-4 py-2 text-sm font-bold transition hover:bg-white/25"
+            >
+              Tout le monde
+            </button>
+          </div>
+        )}
 
         <section className="grid auto-rows-fr gap-5 lg:grid-cols-12">
           <Panel id="calendar" className="lg:col-span-5" icon={<CalendarDays />} title="Calendrier" onExpand={setExpandedPanel}>
-            <FamilyCalendar data={data} onDataChange={onDataChange} />
+            <FamilyCalendar data={data} onDataChange={onDataChange} selectedMemberId={selectedMemberId} />
           </Panel>
 
           <Panel id="tasks" className="lg:col-span-4" icon={<CheckSquare />} title="Tâches" onExpand={setExpandedPanel}>
-            <TaskBoard data={data} onDataChange={onDataChange} />
+            <TaskBoard data={data} onDataChange={onDataChange} selectedMemberId={selectedMemberId} />
           </Panel>
 
           <Panel id="weather" className="lg:col-span-3" icon={<SunMedium />} title="Météo Gorcy" onExpand={setExpandedPanel}>
@@ -220,7 +261,7 @@ export default function Dashboard({ data, onDataChange, refreshKey, syncStatus }
 
       {expandedPanel && (
         <Modal title={getPanelTitle(expandedPanel)} onClose={() => setExpandedPanel(null)} wide>
-          {renderExpandedPanel(expandedPanel, data, onDataChange)}
+          {renderExpandedPanel(expandedPanel, data, onDataChange, selectedMemberId)}
         </Modal>
       )}
     </main>
@@ -310,12 +351,17 @@ function getPanelTitle(panel: PanelId) {
   return titles[panel];
 }
 
-function renderExpandedPanel(panel: PanelId, data: AppData, onDataChange: (data: AppData) => void) {
+function renderExpandedPanel(
+  panel: PanelId,
+  data: AppData,
+  onDataChange: (data: AppData) => void,
+  selectedMemberId: string | null,
+) {
   switch (panel) {
     case "calendar":
-      return <FamilyCalendar data={data} onDataChange={onDataChange} expanded />;
+      return <FamilyCalendar data={data} onDataChange={onDataChange} selectedMemberId={selectedMemberId} expanded />;
     case "tasks":
-      return <TaskBoard data={data} onDataChange={onDataChange} expanded />;
+      return <TaskBoard data={data} onDataChange={onDataChange} selectedMemberId={selectedMemberId} expanded />;
     case "weather":
       return <WeatherCard weather={data.weather} />;
     case "shopping":

@@ -1,5 +1,5 @@
 import { Check, Plus, RotateCcw } from "lucide-react";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import type { AppData, Task } from "../types";
 import { createId } from "../utils/localStorage";
@@ -9,20 +9,35 @@ type Props = {
   data: AppData;
   onDataChange: (data: AppData) => void;
   expanded?: boolean;
+  selectedMemberId?: string | null;
 };
 
-export default function TaskBoard({ data, onDataChange, expanded = false }: Props) {
+export default function TaskBoard({ data, onDataChange, expanded = false, selectedMemberId = null }: Props) {
   const [title, setTitle] = useState("");
-  const [personId, setPersonId] = useState(data.familyMembers[0]?.id ?? "");
+  const [personId, setPersonId] = useState(selectedMemberId ?? data.familyMembers[0]?.id ?? "");
   const [recurrence, setRecurrence] = useState<Task["recurrence"]>("none");
   const [tab, setTab] = useState<"todo" | "done" | "recurring">("todo");
 
-  const todoTasks = useMemo(() => data.tasks.filter((task) => !task.done), [data.tasks]);
-  const doneTasks = useMemo(() => data.tasks.filter((task) => task.done), [data.tasks]);
-  const recurringTasks = useMemo(
-    () => data.tasks.filter((task) => task.recurrence && task.recurrence !== "none"),
-    [data.tasks],
+  const filteredTasks = useMemo(
+    () => data.tasks.filter((task) => !selectedMemberId || task.personId === selectedMemberId),
+    [data.tasks, selectedMemberId],
   );
+  const visibleMembers = selectedMemberId
+    ? data.familyMembers.filter((member) => member.id === selectedMemberId)
+    : data.familyMembers;
+
+  const todoTasks = useMemo(() => filteredTasks.filter((task) => !task.done), [filteredTasks]);
+  const doneTasks = useMemo(() => filteredTasks.filter((task) => task.done), [filteredTasks]);
+  const recurringTasks = useMemo(
+    () => filteredTasks.filter((task) => task.recurrence && task.recurrence !== "none"),
+    [filteredTasks],
+  );
+
+  useEffect(() => {
+    if (selectedMemberId) {
+      setPersonId(selectedMemberId);
+    }
+  }, [selectedMemberId]);
 
   function addTask(event: FormEvent) {
     event.preventDefault();
@@ -75,7 +90,7 @@ export default function TaskBoard({ data, onDataChange, expanded = false }: Prop
     return (
       <div className="space-y-4">
         <div className="grid gap-3 sm:grid-cols-2">
-          {data.familyMembers.map((member) => {
+          {visibleMembers.map((member) => {
             const memberTasks = data.tasks.filter((task) => task.personId === member.id && !task.done);
             return (
               <div key={member.id} className="rounded-3xl bg-white/50 p-3">
