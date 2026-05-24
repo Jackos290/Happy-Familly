@@ -16,6 +16,7 @@ export default function TaskBoard({ data, onDataChange, expanded = false, select
   const [title, setTitle] = useState("");
   const [personId, setPersonId] = useState(selectedMemberId ?? data.familyMembers[0]?.id ?? "");
   const [recurrence, setRecurrence] = useState<Task["recurrence"]>("none");
+  const [rewardMinutes, setRewardMinutes] = useState(10);
   const [tab, setTab] = useState<"todo" | "done" | "recurring">("todo");
 
   const filteredTasks = useMemo(
@@ -53,6 +54,7 @@ export default function TaskBoard({ data, onDataChange, expanded = false, select
           personId,
           done: false,
           recurrence,
+          rewardMinutes,
         },
       ],
     });
@@ -110,10 +112,12 @@ export default function TaskBoard({ data, onDataChange, expanded = false, select
           title={title}
           personId={personId}
           recurrence={recurrence}
+          rewardMinutes={rewardMinutes}
           data={data}
           onTitleChange={setTitle}
           onPersonChange={setPersonId}
           onRecurrenceChange={setRecurrence}
+          onRewardMinutesChange={setRewardMinutes}
           onSubmit={addTask}
         />
       </div>
@@ -140,10 +144,12 @@ export default function TaskBoard({ data, onDataChange, expanded = false, select
         title={title}
         personId={personId}
         recurrence={recurrence}
+        rewardMinutes={rewardMinutes}
         data={data}
         onTitleChange={setTitle}
         onPersonChange={setPersonId}
         onRecurrenceChange={setRecurrence}
+        onRewardMinutesChange={setRewardMinutes}
         onSubmit={addTask}
       />
 
@@ -164,23 +170,27 @@ function TaskForm({
   title,
   personId,
   recurrence,
+  rewardMinutes,
   data,
   onTitleChange,
   onPersonChange,
   onRecurrenceChange,
+  onRewardMinutesChange,
   onSubmit,
 }: {
   title: string;
   personId: string;
   recurrence: Task["recurrence"];
+  rewardMinutes: number;
   data: AppData;
   onTitleChange: (value: string) => void;
   onPersonChange: (value: string) => void;
   onRecurrenceChange: (value: Task["recurrence"]) => void;
+  onRewardMinutesChange: (value: number) => void;
   onSubmit: (event: FormEvent) => void;
 }) {
   return (
-    <form onSubmit={onSubmit} className="grid gap-3 rounded-3xl bg-white/50 p-3 md:grid-cols-[1fr_180px_170px_auto]">
+    <form onSubmit={onSubmit} className="grid gap-3 rounded-3xl bg-white/50 p-3 md:grid-cols-[1fr_180px_150px_120px_auto]">
       <input
         className="field"
         value={title}
@@ -197,6 +207,15 @@ function TaskForm({
         <option value="daily">Tous les jours</option>
         <option value="weekly">Chaque semaine</option>
       </select>
+      <input
+        className="field"
+        type="number"
+        min="0"
+        step="5"
+        value={rewardMinutes}
+        onChange={(event) => onRewardMinutesChange(Number(event.target.value))}
+        title="Minutes gagnées"
+      />
       <button className="icon-button" title="Ajouter la tâche">
         <Plus className="h-5 w-5" />
       </button>
@@ -250,6 +269,11 @@ function TaskList({
           )}
 
           <div className="flex items-center justify-between gap-2">
+            {(task.rewardMinutes ?? 0) > 0 && (
+              <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-700">
+                +{task.rewardMinutes} min
+              </span>
+            )}
             {showRecurrence && task.recurrence && task.recurrence !== "none" && (
               <span className="rounded-full bg-sky-100 px-3 py-1 text-xs font-bold text-sky-700">
                 {task.recurrence === "daily" ? "Quotidienne" : "Hebdomadaire"}

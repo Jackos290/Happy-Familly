@@ -1,4 +1,4 @@
-import {
+﻿import {
   CalendarDays,
   CheckSquare,
   Expand,
@@ -49,13 +49,14 @@ type WakeLockNavigator = Navigator & {
 export default function Dashboard({ data, onDataChange, refreshKey, syncStatus }: DashboardProps) {
   const wakeLockRef = useRef<WakeLockSentinelLike | null>(null);
   const [tabletModeActive, setTabletModeActive] = useState(false);
-  const [tabletModeMessage, setTabletModeMessage] = useState("Prêt pour la tablette");
+  const [tabletModeMessage, setTabletModeMessage] = useState("PrÃªt pour la tablette");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [expandedPanel, setExpandedPanel] = useState<PanelId | null>(null);
   const [nextHours, setNextHours] = useState<HourlyForecast[]>([]);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
 
   const selectedMember = data.familyMembers.find((member) => member.id === selectedMemberId);
+  const selectedMemberIsChild = Boolean(selectedMember && isChildMember(selectedMember.name, selectedMember.id));
 
   const now = new Intl.DateTimeFormat("fr-FR", {
     weekday: "long",
@@ -75,9 +76,9 @@ export default function Dashboard({ data, onDataChange, refreshKey, syncStatus }
       wakeLockRef.current.addEventListener("release", () => {
         wakeLockRef.current = null;
       });
-      setTabletModeMessage("Plein écran et anti-veille actifs");
+      setTabletModeMessage("Plein Ã©cran et anti-veille actifs");
     } catch {
-      setTabletModeMessage("Anti-veille refusé par le navigateur");
+      setTabletModeMessage("Anti-veille refusÃ© par le navigateur");
     }
   }
 
@@ -156,14 +157,7 @@ export default function Dashboard({ data, onDataChange, refreshKey, syncStatus }
             <p className="mt-1 text-lg capitalize text-slate-600">{now}</p>
             {nextHours.length > 0 && (
               <div className="mt-3 flex max-w-3xl flex-wrap gap-2">
-                {nextHours.map((hour) => (
-                  <span
-                    key={hour.time}
-                    className="rounded-2xl bg-white/85 px-3 py-1.5 text-sm font-black text-slate-700 shadow-sm"
-                  >
-                    {getHourlyEmoji(hour.rain)} {hour.time} · {hour.temperature}°C · pluie {hour.rain}%
-                  </span>
-                ))}
+                {nextHours.map((hour) => <ForecastPill key={hour.time} hour={hour} />)}
               </div>
             )}
           </div>
@@ -211,7 +205,7 @@ export default function Dashboard({ data, onDataChange, refreshKey, syncStatus }
         </p>
         {selectedMember && (
           <div className="flex items-center justify-between gap-3 rounded-3xl bg-slate-950 px-5 py-3 text-white shadow-glass">
-            <p className="font-bold">Vue filtrée : {selectedMember.name}</p>
+            <p className="font-bold">Vue filtrÃ©e : {selectedMember.name}</p>
             <button
               onClick={() => setSelectedMemberId(null)}
               className="rounded-full bg-white/15 px-4 py-2 text-sm font-bold transition hover:bg-white/25"
@@ -226,11 +220,11 @@ export default function Dashboard({ data, onDataChange, refreshKey, syncStatus }
             <FamilyCalendar data={data} onDataChange={onDataChange} selectedMemberId={selectedMemberId} />
           </Panel>
 
-          <Panel id="tasks" className="lg:col-span-4" icon={<CheckSquare />} title="Tâches" onExpand={setExpandedPanel}>
+          <Panel id="tasks" className="lg:col-span-4" icon={<CheckSquare />} title="TÃ¢ches" onExpand={setExpandedPanel}>
             <TaskBoard data={data} onDataChange={onDataChange} selectedMemberId={selectedMemberId} />
           </Panel>
 
-          <Panel id="weather" className="lg:col-span-3" icon={<SunMedium />} title="Météo Gorcy" onExpand={setExpandedPanel}>
+          <Panel id="weather" className="lg:col-span-3" icon={<SunMedium />} title="MÃ©tÃ©o Gorcy" onExpand={setExpandedPanel}>
             <WeatherCard weather={data.weather} />
           </Panel>
 
@@ -238,8 +232,12 @@ export default function Dashboard({ data, onDataChange, refreshKey, syncStatus }
             <ShoppingList data={data} onDataChange={onDataChange} />
           </Panel>
 
-          <Panel id="budget" className="lg:col-span-4" icon={<PiggyBank />} title="Budget" onExpand={setExpandedPanel}>
-            <BudgetCard data={data} onDataChange={onDataChange} />
+          <Panel id="budget" className="lg:col-span-4" icon={<PiggyBank />} title={selectedMemberIsChild ? "Récompenses" : "Budget"} onExpand={setExpandedPanel}>
+            {selectedMemberIsChild && selectedMemberId ? (
+              <RewardCounter data={data} memberId={selectedMemberId} />
+            ) : (
+              <BudgetCard data={data} onDataChange={onDataChange} />
+            )}
           </Panel>
 
           <div className="grid gap-5 lg:col-span-4">
@@ -272,6 +270,38 @@ function getHourlyEmoji(rain: number) {
   if (rain >= 65) return "🌧️";
   if (rain >= 30) return "🌦️";
   return "☀️";
+}
+
+function ForecastPill({ hour }: { hour: HourlyForecast }) {
+  return (
+    <span className="flex min-w-16 flex-col items-center rounded-2xl bg-white/85 px-3 py-2 text-sm font-black text-slate-700 shadow-sm">
+      <span>{hour.time}</span>
+      <span className="text-2xl leading-6">{getHourlyEmoji(hour.rain)}</span>
+    </span>
+  );
+}
+
+function RewardCounter({ data, memberId }: { data: AppData; memberId: string }) {
+  const member = data.familyMembers.find((item) => item.id === memberId);
+  const minutes = data.tasks
+    .filter((task) => task.personId === memberId && task.done)
+    .reduce((total, task) => total + (task.rewardMinutes ?? 0), 0);
+
+  return (
+    <div className="rounded-3xl bg-white/50 p-5">
+      <p className="text-sm font-black uppercase tracking-[0.16em] text-slate-500">Temps gagné</p>
+      <p className="mt-3 text-5xl font-black text-slate-950">{minutes}</p>
+      <p className="mt-1 text-lg font-bold text-slate-600">minutes</p>
+      <p className="mt-4 rounded-2xl bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">
+        {member?.name ?? "Enfant"} gagne du temps quand ses tâches sont validées.
+      </p>
+    </div>
+  );
+}
+
+function isChildMember(name: string, id: string) {
+  const value = `${id} ${name}`.toLowerCase();
+  return value.includes("enfant") || (!value.includes("papa") && !value.includes("maman"));
 }
 
 function Panel({
@@ -341,8 +371,8 @@ function Modal({
 function getPanelTitle(panel: PanelId) {
   const titles: Record<PanelId, string> = {
     calendar: "Calendrier",
-    tasks: "Tâches",
-    weather: "Météo de Gorcy",
+    tasks: "TÃ¢ches",
+    weather: "MÃ©tÃ©o de Gorcy",
     shopping: "Courses",
     budget: "Budget",
     quote: "Phrase du jour",
@@ -367,6 +397,12 @@ function renderExpandedPanel(
     case "shopping":
       return <ShoppingList data={data} onDataChange={onDataChange} expanded />;
     case "budget":
+      if (selectedMemberId) {
+        const member = data.familyMembers.find((item) => item.id === selectedMemberId);
+        if (member && isChildMember(member.name, member.id)) {
+          return <RewardCounter data={data} memberId={selectedMemberId} />;
+        }
+      }
       return <BudgetCard data={data} onDataChange={onDataChange} />;
     case "quote":
       return <PositiveQuote data={data} onDataChange={onDataChange} />;
@@ -374,3 +410,5 @@ function renderExpandedPanel(
       return <DailyThanks data={data} onDataChange={onDataChange} />;
   }
 }
+
+

@@ -22,6 +22,11 @@ export default function FamilyCalendar({ data, onDataChange, expanded = false, s
   const [personId, setPersonId] = useState(selectedMemberId ?? data.familyMembers[0]?.id ?? "");
   const [view, setView] = useState<CalendarView>("month");
   const [cursorDate, setCursorDate] = useState(new Date());
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDate, setEditDate] = useState("");
+  const [editTime, setEditTime] = useState("");
+  const [editPersonId, setEditPersonId] = useState("");
 
   const dashboardEventsByDate = useMemo(() => {
     const events = uniqueEvents([...getSpecialEventsForDashboard(), ...data.calendarEvents]).filter((event) =>
@@ -83,12 +88,52 @@ export default function FamilyCalendar({ data, onDataChange, expanded = false, s
     setTitle("");
   }
 
+  function openEvent(event: CalendarEvent) {
+    setSelectedEvent(event);
+    setEditTitle(event.title);
+    setEditDate(getEventDateKey(event));
+    setEditTime(event.time === "Toute la journée" ? "08:00" : event.time);
+    setEditPersonId(event.personId ?? data.familyMembers[0]?.id ?? "");
+  }
+
+  function saveSelectedEvent(event: FormEvent) {
+    event.preventDefault();
+    if (!selectedEvent || !isEditableEvent(selectedEvent, data)) return;
+
+    onDataChange({
+      ...data,
+      calendarEvents: data.calendarEvents.map((item) =>
+        item.id === selectedEvent.id
+          ? {
+              ...item,
+              title: editTitle.trim() || item.title,
+              date: editDate === toDateKey(new Date()) ? "today" : "tomorrow",
+              dateISO: editDate,
+              time: editTime,
+              personId: editPersonId,
+            }
+          : item,
+      ),
+    });
+    setSelectedEvent(null);
+  }
+
+  function deleteSelectedEvent() {
+    if (!selectedEvent || !isEditableEvent(selectedEvent, data)) return;
+
+    onDataChange({
+      ...data,
+      calendarEvents: data.calendarEvents.filter((item) => item.id !== selectedEvent.id),
+    });
+    setSelectedEvent(null);
+  }
+
   if (!expanded) {
     return (
       <div className="space-y-4">
         <div className="grid gap-3 sm:grid-cols-2">
-          <EventColumn title="Aujourd'hui" events={dashboardEventsByDate.today} data={data} />
-          <EventColumn title="Demain" events={dashboardEventsByDate.tomorrow} data={data} />
+          <EventColumn title="Aujourd'hui" events={dashboardEventsByDate.today} data={data} onOpen={openEvent} />
+          <EventColumn title="Demain" events={dashboardEventsByDate.tomorrow} data={data} onOpen={openEvent} />
         </div>
         <CalendarForm
           title={title}
@@ -102,6 +147,24 @@ export default function FamilyCalendar({ data, onDataChange, expanded = false, s
           onDateChange={setDate}
           onPersonChange={setPersonId}
         />
+        {selectedEvent && (
+          <EventDetail
+            event={selectedEvent}
+            data={data}
+            editable={isEditableEvent(selectedEvent, data)}
+            title={editTitle}
+            date={editDate}
+            time={editTime}
+            personId={editPersonId}
+            onTitleChange={setEditTitle}
+            onDateChange={setEditDate}
+            onTimeChange={setEditTime}
+            onPersonChange={setEditPersonId}
+            onSave={saveSelectedEvent}
+            onDelete={deleteSelectedEvent}
+            onClose={() => setSelectedEvent(null)}
+          />
+        )}
       </div>
     );
   }
@@ -141,11 +204,30 @@ export default function FamilyCalendar({ data, onDataChange, expanded = false, s
       />
 
       {view === "month" ? (
-        <MonthGrid cursorDate={cursorDate} events={rangeEvents} data={data} />
+        <MonthGrid cursorDate={cursorDate} events={rangeEvents} data={data} onOpen={openEvent} />
       ) : view === "week" ? (
-        <WeekGrid cursorDate={cursorDate} events={rangeEvents} data={data} />
+        <WeekGrid cursorDate={cursorDate} events={rangeEvents} data={data} onOpen={openEvent} />
       ) : (
-        <AgendaList events={rangeEvents} data={data} />
+        <AgendaList events={rangeEvents} data={data} onOpen={openEvent} />
+      )}
+
+      {selectedEvent && (
+        <EventDetail
+          event={selectedEvent}
+          data={data}
+          editable={isEditableEvent(selectedEvent, data)}
+          title={editTitle}
+          date={editDate}
+          time={editTime}
+          personId={editPersonId}
+          onTitleChange={setEditTitle}
+          onDateChange={setEditDate}
+          onTimeChange={setEditTime}
+          onPersonChange={setEditPersonId}
+          onSave={saveSelectedEvent}
+          onDelete={deleteSelectedEvent}
+          onClose={() => setSelectedEvent(null)}
+        />
       )}
     </div>
   );
@@ -187,7 +269,17 @@ function CalendarForm({
   );
 }
 
-function MonthGrid({ cursorDate, events, data }: { cursorDate: Date; events: CalendarEvent[]; data: AppData }) {
+function MonthGrid({
+  cursorDate,
+  events,
+  data,
+  onOpen,
+}: {
+  cursorDate: Date;
+  events: CalendarEvent[];
+  data: AppData;
+  onOpen: (event: CalendarEvent) => void;
+}) {
   const days = getMonthGridDays(cursorDate);
   return (
     <div className="grid grid-cols-7 gap-2">
@@ -209,7 +301,7 @@ function MonthGrid({ cursorDate, events, data }: { cursorDate: Date; events: Cal
             <p className="mb-2 text-sm font-black text-slate-800">{day.getDate()}</p>
             <div className="space-y-1">
               {dayEvents.slice(0, 4).map((event) => (
-                <EventPill key={getEventIdentity(event)} event={event} data={data} />
+                <EventPill key={getEventIdentity(event)} event={event} data={data} onOpen={onOpen} />
               ))}
               {dayEvents.length > 4 && (
                 <p className="rounded-xl bg-slate-100 px-2 py-1 text-xs font-black text-slate-500">
@@ -224,7 +316,17 @@ function MonthGrid({ cursorDate, events, data }: { cursorDate: Date; events: Cal
   );
 }
 
-function WeekGrid({ cursorDate, events, data }: { cursorDate: Date; events: CalendarEvent[]; data: AppData }) {
+function WeekGrid({
+  cursorDate,
+  events,
+  data,
+  onOpen,
+}: {
+  cursorDate: Date;
+  events: CalendarEvent[];
+  data: AppData;
+  onOpen: (event: CalendarEvent) => void;
+}) {
   const { start } = getViewRange(cursorDate, "week");
   const days = Array.from({ length: 7 }, (_, index) => {
     const day = atNoon(start);
@@ -258,7 +360,7 @@ function WeekGrid({ cursorDate, events, data }: { cursorDate: Date; events: Cale
                   Rien
                 </p>
               ) : (
-                dayEvents.map((event) => <EventCard key={getEventIdentity(event)} event={event} data={data} compact />)
+                dayEvents.map((event) => <EventCard key={getEventIdentity(event)} event={event} data={data} onOpen={onOpen} compact />)
               )}
             </div>
           </section>
@@ -268,7 +370,7 @@ function WeekGrid({ cursorDate, events, data }: { cursorDate: Date; events: Cale
   );
 }
 
-function AgendaList({ events, data }: { events: CalendarEvent[]; data: AppData }) {
+function AgendaList({ events, data, onOpen }: { events: CalendarEvent[]; data: AppData; onOpen: (event: CalendarEvent) => void }) {
   if (events.length === 0) {
     return <p className="rounded-2xl bg-white px-4 py-4 font-semibold text-slate-500">Aucun événement sur cette période.</p>;
   }
@@ -276,32 +378,42 @@ function AgendaList({ events, data }: { events: CalendarEvent[]; data: AppData }
   return (
     <div className="space-y-3">
       {events.map((event) => (
-        <EventCard key={getEventIdentity(event)} event={event} data={data} showDate />
+        <EventCard key={getEventIdentity(event)} event={event} data={data} onOpen={onOpen} showDate />
       ))}
     </div>
   );
 }
 
-function EventColumn({ title, events, data }: { title: string; events: CalendarEvent[]; data: AppData }) {
+function EventColumn({
+  title,
+  events,
+  data,
+  onOpen,
+}: {
+  title: string;
+  events: CalendarEvent[];
+  data: AppData;
+  onOpen: (event: CalendarEvent) => void;
+}) {
   return (
     <div className="rounded-3xl bg-white/50 p-4">
       <h3 className="mb-3 text-sm font-bold uppercase tracking-[0.16em] text-slate-500">{title}</h3>
       <div className="space-y-3">
-        {events.map((event) => <EventCard key={getEventIdentity(event)} event={event} data={data} />)}
+        {events.map((event) => <EventCard key={getEventIdentity(event)} event={event} data={data} onOpen={onOpen} />)}
       </div>
     </div>
   );
 }
 
-function EventPill({ event, data }: { event: CalendarEvent; data: AppData }) {
+function EventPill({ event, data, onOpen }: { event: CalendarEvent; data: AppData; onOpen: (event: CalendarEvent) => void }) {
   const color = getEventColor(event, data);
 
   return (
-    <div className={`truncate rounded-xl border px-2 py-1 text-xs font-bold ${color}`}>
+    <button onClick={() => onOpen(event)} className={`w-full truncate rounded-xl border px-2 py-1 text-left text-xs font-bold ${color}`}>
       {event.time !== "Toute la journée" && `${event.time} · `}
       {event.title}
       <EventMember event={event} data={data} small />
-    </div>
+    </button>
   );
 }
 
@@ -310,16 +422,18 @@ function EventCard({
   data,
   compact = false,
   showDate = false,
+  onOpen,
 }: {
   event: CalendarEvent;
   data: AppData;
   compact?: boolean;
   showDate?: boolean;
+  onOpen: (event: CalendarEvent) => void;
 }) {
   const color = getEventColor(event, data);
 
   return (
-    <div className={`rounded-2xl border px-4 py-3 shadow-sm ${color}`}>
+    <button onClick={() => onOpen(event)} className={`w-full rounded-2xl border px-4 py-3 text-left shadow-sm ${color}`}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <p className={`${compact ? "text-sm" : "text-base"} font-black text-slate-950`}>{event.title}</p>
@@ -330,13 +444,84 @@ function EventCard({
         <time className="rounded-full bg-white/80 px-3 py-1 text-sm font-black text-slate-800">{event.time}</time>
       </div>
       <EventMember event={event} data={data} />
-    </div>
+    </button>
   );
 }
 
 function EventMember({ event, data, small = false }: { event: CalendarEvent; data: AppData; small?: boolean }) {
   const member = data.familyMembers.find((item) => item.id === event.personId);
   return <MemberBadge member={member} size={small ? "sm" : "md"} className={small ? "ml-2" : "mt-2"} />;
+}
+
+function EventDetail({
+  event,
+  data,
+  editable,
+  title,
+  date,
+  time,
+  personId,
+  onTitleChange,
+  onDateChange,
+  onTimeChange,
+  onPersonChange,
+  onSave,
+  onDelete,
+  onClose,
+}: {
+  event: CalendarEvent;
+  data: AppData;
+  editable: boolean;
+  title: string;
+  date: string;
+  time: string;
+  personId: string;
+  onTitleChange: (value: string) => void;
+  onDateChange: (value: string) => void;
+  onTimeChange: (value: string) => void;
+  onPersonChange: (value: string) => void;
+  onSave: (event: FormEvent) => void;
+  onDelete: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm">
+      <section className="w-full max-w-2xl rounded-[2rem] bg-white p-5 shadow-glass">
+        <div className="mb-4 flex items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-black uppercase tracking-[0.16em] text-slate-500">Rendez-vous</p>
+            <h3 className="mt-1 text-2xl font-black text-slate-950">{event.title}</h3>
+          </div>
+          <button onClick={onClose} className="icon-button" title="Fermer">×</button>
+        </div>
+
+        {editable ? (
+          <form onSubmit={onSave} className="space-y-3">
+            <input className="field" value={title} onChange={(item) => onTitleChange(item.target.value)} />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <input className="field" type="date" value={date} onChange={(item) => onDateChange(item.target.value)} />
+              <input className="field" type="time" value={time} onChange={(item) => onTimeChange(item.target.value)} />
+            </div>
+            <MemberSelect data={data} value={personId} onChange={onPersonChange} />
+            <div className="flex flex-wrap justify-between gap-3 pt-2">
+              <button type="button" onClick={onDelete} className="rounded-2xl bg-rose-50 px-5 py-3 font-bold text-rose-700">
+                Supprimer
+              </button>
+              <button className="rounded-2xl bg-slate-950 px-5 py-3 font-bold text-white">
+                Enregistrer
+              </button>
+            </div>
+          </form>
+        ) : (
+          <div className="space-y-3">
+            <p className="rounded-2xl bg-slate-50 px-4 py-3 font-bold text-slate-700">{formatDateLabel(getEventDateKey(event))}</p>
+            <p className="rounded-2xl bg-slate-50 px-4 py-3 font-bold text-slate-700">{event.time}</p>
+            <EventMember event={event} data={data} />
+          </div>
+        )}
+      </section>
+    </div>
+  );
 }
 
 function MemberSelect({
@@ -402,6 +587,10 @@ function getEventColor(event: CalendarEvent, data: AppData) {
   if (event.title.includes("(FR)")) return "border-blue-200 bg-blue-50 text-blue-950";
   if (event.title.includes("(LU)")) return "border-amber-200 bg-amber-50 text-amber-950";
   return "border-slate-200 bg-slate-50 text-slate-950";
+}
+
+function isEditableEvent(event: CalendarEvent, data: AppData) {
+  return data.calendarEvents.some((item) => item.id === event.id);
 }
 
 function getEventDateKey(event: CalendarEvent) {

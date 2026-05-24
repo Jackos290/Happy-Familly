@@ -21,6 +21,7 @@ export type Task = {
   done: boolean;
   recurrence?: "none" | "daily" | "weekly";
   completedAt?: string;
+  rewardMinutes?: number;
 };
 
 export type ShoppingItem = {
