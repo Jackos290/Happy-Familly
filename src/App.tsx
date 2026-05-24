@@ -10,6 +10,7 @@ export default function App() {
   const [syncStatus, setSyncStatus] = useState("Connexion Supabase...");
   const remoteReadyRef = useRef(false);
   const applyingRemoteRef = useRef(false);
+  const pendingLocalSaveRef = useRef(false);
 
   useEffect(() => {
     saveAppData(data);
@@ -20,6 +21,9 @@ export default function App() {
 
     const timeout = window.setTimeout(() => {
       void saveRemoteAppData(data).then((error) => {
+        if (!error) {
+          pendingLocalSaveRef.current = false;
+        }
         setSyncStatus(error ? `Erreur Supabase: ${error}` : "Synchronisé");
       });
     }, 500);
@@ -40,6 +44,10 @@ export default function App() {
       }
 
       if (remoteData) {
+        if (pendingLocalSaveRef.current) {
+          return;
+        }
+
         applyingRemoteRef.current = true;
         setData(remoteData);
         setSyncStatus("Synchronisé");
@@ -74,10 +82,15 @@ export default function App() {
     return () => window.clearInterval(interval);
   }, []);
 
+  function handleDataChange(nextData: AppData) {
+    pendingLocalSaveRef.current = true;
+    setData(nextData);
+  }
+
   return (
     <Dashboard
       data={data}
-      onDataChange={setData}
+      onDataChange={handleDataChange}
       refreshKey={refreshKey}
       syncStatus={syncStatus}
     />

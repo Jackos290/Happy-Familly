@@ -21,11 +21,10 @@ export default function FamilySettings({ data, onDataChange }: Props) {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      updateMember(memberId, { photoUrl: String(reader.result) });
-    };
-    reader.readAsDataURL(file);
+    void resizeImage(file, 512).then((photoUrl) => {
+      updateMember(memberId, { photoUrl });
+      event.target.value = "";
+    });
   }
 
   return (
@@ -70,4 +69,38 @@ export default function FamilySettings({ data, onDataChange }: Props) {
       ))}
     </div>
   );
+}
+
+function resizeImage(file: File, maxSize: number) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onerror = () => reject(new Error("Impossible de lire la photo"));
+    reader.onload = () => {
+      const image = new Image();
+
+      image.onerror = () => reject(new Error("Impossible de charger la photo"));
+      image.onload = () => {
+        const ratio = Math.min(1, maxSize / Math.max(image.width, image.height));
+        const width = Math.max(1, Math.round(image.width * ratio));
+        const height = Math.max(1, Math.round(image.height * ratio));
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+
+        const context = canvas.getContext("2d");
+        if (!context) {
+          reject(new Error("Impossible de préparer la photo"));
+          return;
+        }
+
+        context.drawImage(image, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", 0.82));
+      };
+
+      image.src = String(reader.result);
+    };
+
+    reader.readAsDataURL(file);
+  });
 }
