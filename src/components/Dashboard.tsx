@@ -30,6 +30,7 @@ type DashboardProps = {
   data: AppData;
   onDataChange: (data: AppData) => void;
   refreshKey: number;
+  syncStatus: string;
 };
 
 type PanelId = "calendar" | "tasks" | "weather" | "shopping" | "budget" | "quote" | "thanks";
@@ -45,7 +46,7 @@ type WakeLockNavigator = Navigator & {
   };
 };
 
-export default function Dashboard({ data, onDataChange, refreshKey }: DashboardProps) {
+export default function Dashboard({ data, onDataChange, refreshKey, syncStatus }: DashboardProps) {
   const wakeLockRef = useRef<WakeLockSentinelLike | null>(null);
   const [tabletModeActive, setTabletModeActive] = useState(false);
   const [tabletModeMessage, setTabletModeMessage] = useState("Prêt pour la tablette");
@@ -164,7 +165,7 @@ export default function Dashboard({ data, onDataChange, refreshKey }: DashboardP
             </button>
             <span className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-600">
               <RefreshCw className="h-4 w-4" />
-              1 min
+              {syncStatus}
             </span>
             <button
               onClick={activateTabletMode}
