@@ -69,8 +69,20 @@ export default async function handler(request, response) {
 
     response.status(405).json({ error: "Méthode non autorisée" });
   } catch (error) {
+    const cause = error?.cause;
     response.status(500).json({
       error: error instanceof Error ? error.message : "Erreur inconnue",
+      cause:
+        cause && typeof cause === "object"
+          ? {
+              code: cause.code,
+              errno: cause.errno,
+              syscall: cause.syscall,
+              hostname: cause.hostname,
+              message: cause.message,
+            }
+          : cause,
+      supabaseUrl: SUPABASE_URL,
     });
   }
 }
