@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react";
+﻿import { Plus } from "lucide-react";
 import { FormEvent, useMemo, useState } from "react";
 import type { AppData } from "../types";
 import { createId } from "../utils/localStorage";
@@ -49,10 +49,10 @@ export default function BudgetCard({ data, onDataChange }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-[1.5rem] bg-white/65 p-5">
+      <div className="rounded-[1.5rem] bg-white/60 p-5">
         <div className="grid grid-cols-3 gap-3 text-center">
           <Metric label="Budget" value={euros.format(data.budget.monthlyTotal)} />
-          <Metric label="Dépensé" value={euros.format(budget.spent)} />
+          <Metric label="DÃ©pensÃ©" value={euros.format(budget.spent)} />
           <Metric label="Reste" value={euros.format(budget.remaining)} />
         </div>
         <div className="mt-5 h-5 overflow-hidden rounded-full bg-slate-100">
@@ -62,7 +62,7 @@ export default function BudgetCard({ data, onDataChange }: Props) {
           />
         </div>
         <p className="mt-2 text-right text-sm font-bold text-slate-500">
-          {Math.round(budget.percent)}% utilisé
+          {Math.round(budget.percent)}% utilisÃ©
         </p>
       </div>
 
@@ -75,12 +75,12 @@ export default function BudgetCard({ data, onDataChange }: Props) {
         ))}
       </div>
 
-      <form onSubmit={addExpense} className="grid gap-3 rounded-3xl bg-white/55 p-3 sm:grid-cols-[1fr_120px_auto]">
+      <form onSubmit={addExpense} className="grid gap-3 rounded-3xl bg-white/50 p-3 sm:grid-cols-[1fr_120px_auto]">
         <input
           className="field"
           value={label}
           onChange={(event) => setLabel(event.target.value)}
-          placeholder="Nouvelle dépense"
+          placeholder="Nouvelle dÃ©pense"
         />
         <input
           className="field"
@@ -89,9 +89,9 @@ export default function BudgetCard({ data, onDataChange }: Props) {
           step="1"
           value={amount}
           onChange={(event) => setAmount(event.target.value)}
-          placeholder="€"
+          placeholder="â‚¬"
         />
-        <button className="icon-button" title="Ajouter la dépense">
+        <button className="icon-button" title="Ajouter la dÃ©pense">
           <Plus className="h-5 w-5" />
         </button>
       </form>

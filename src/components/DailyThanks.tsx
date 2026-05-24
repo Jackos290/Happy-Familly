@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react";
+﻿import { Plus } from "lucide-react";
 import { FormEvent, useState } from "react";
 import type { AppData } from "../types";
 import { createId } from "../utils/localStorage";
@@ -40,12 +40,12 @@ export default function DailyThanks({ data, onDataChange }: Props) {
           </div>
         ))}
       </div>
-      <form onSubmit={addThanks} className="grid gap-3 rounded-3xl bg-white/55 p-3 sm:grid-cols-[1fr_145px_auto]">
+      <form onSubmit={addThanks} className="grid gap-3 rounded-3xl bg-white/50 p-3 sm:grid-cols-[1fr_145px_auto]">
         <input
           className="field"
           value={text}
           onChange={(event) => setText(event.target.value)}
-          placeholder="Moment apprécié"
+          placeholder="Moment apprÃ©ciÃ©"
         />
         <select
           className="field"

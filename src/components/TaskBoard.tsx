@@ -1,4 +1,4 @@
-import { Check, Plus } from "lucide-react";
+﻿import { Check, Plus } from "lucide-react";
 import { FormEvent, useState } from "react";
 import type { AppData } from "../types";
 import { createId } from "../utils/localStorage";
@@ -46,7 +46,7 @@ export default function TaskBoard({ data, onDataChange }: Props) {
         {data.familyMembers.map((member) => {
           const memberTasks = data.tasks.filter((task) => task.personId === member.id);
           return (
-            <div key={member.id} className="rounded-3xl bg-white/55 p-3">
+            <div key={member.id} className="rounded-3xl bg-white/50 p-3">
               <span className={`mb-3 inline-flex rounded-full px-3 py-1 text-sm font-bold ${member.color}`}>
                 {member.name}
               </span>
@@ -77,12 +77,12 @@ export default function TaskBoard({ data, onDataChange }: Props) {
         })}
       </div>
 
-      <form onSubmit={addTask} className="grid gap-3 rounded-3xl bg-white/55 p-3 sm:grid-cols-[1fr_180px_auto]">
+      <form onSubmit={addTask} className="grid gap-3 rounded-3xl bg-white/50 p-3 sm:grid-cols-[1fr_180px_auto]">
         <input
           className="field"
           value={title}
           onChange={(event) => setTitle(event.target.value)}
-          placeholder="Nouvelle tâche"
+          placeholder="Nouvelle tÃ¢che"
         />
         <select
           className="field"
@@ -95,7 +95,7 @@ export default function TaskBoard({ data, onDataChange }: Props) {
             </option>
           ))}
         </select>
-        <button className="icon-button" title="Ajouter la tâche">
+        <button className="icon-button" title="Ajouter la tÃ¢che">
           <Plus className="h-5 w-5" />
         </button>
       </form>

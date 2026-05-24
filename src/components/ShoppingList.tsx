@@ -1,4 +1,4 @@
-import { Check, Plus, Trash2 } from "lucide-react";
+﻿import { Check, Plus, Trash2 } from "lucide-react";
 import { FormEvent, useState } from "react";
 import type { AppData } from "../types";
 import { createId } from "../utils/localStorage";
@@ -71,7 +71,7 @@ export default function ShoppingList({ data, onDataChange }: Props) {
         ))}
       </div>
 
-      <form onSubmit={addItem} className="flex gap-3 rounded-3xl bg-white/55 p-3">
+      <form onSubmit={addItem} className="flex gap-3 rounded-3xl bg-white/50 p-3">
         <input
           className="field"
           value={label}

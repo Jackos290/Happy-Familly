@@ -2,6 +2,7 @@ export type FamilyMember = {
   id: string;
   name: string;
   color: string;
+  photoUrl?: string;
 };
 
 export type CalendarEvent = {

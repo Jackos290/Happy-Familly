@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react";
+﻿import { Plus } from "lucide-react";
 import { FormEvent, useMemo, useState } from "react";
 import type { AppData, CalendarEvent } from "../types";
 import { createId } from "../utils/localStorage";
@@ -53,12 +53,12 @@ export default function FamilyCalendar({ data, onDataChange }: Props) {
         <EventColumn title="Demain" events={eventsByDate.tomorrow} data={data} />
       </div>
 
-      <form onSubmit={addEvent} className="grid gap-3 rounded-3xl bg-white/55 p-3">
+      <form onSubmit={addEvent} className="grid gap-3 rounded-3xl bg-white/50 p-3">
         <input
           className="field"
           value={title}
           onChange={(event) => setTitle(event.target.value)}
-          placeholder="Ajouter un événement"
+          placeholder="Ajouter un Ã©vÃ©nement"
         />
         <div className="grid grid-cols-2 gap-3 md:grid-cols-[1fr_1fr_1.3fr_auto]">
           <input
@@ -86,7 +86,7 @@ export default function FamilyCalendar({ data, onDataChange }: Props) {
               </option>
             ))}
           </select>
-          <button className="icon-button" title="Ajouter l'événement">
+          <button className="icon-button" title="Ajouter l'Ã©vÃ©nement">
             <Plus className="h-5 w-5" />
           </button>
         </div>
@@ -105,7 +105,7 @@ function EventColumn({
   data: AppData;
 }) {
   return (
-    <div className="rounded-3xl bg-white/55 p-4">
+    <div className="rounded-3xl bg-white/50 p-4">
       <h3 className="mb-3 text-sm font-bold uppercase tracking-[0.16em] text-slate-500">
         {title}
       </h3>

@@ -1,4 +1,4 @@
-import { CloudRain, Sun, Wind } from "lucide-react";
+﻿import { CloudRain, Sun, Wind } from "lucide-react";
 import type { Weather } from "../types";
 
 type Props = {
@@ -15,10 +15,10 @@ export default function WeatherCard({ weather }: Props) {
         <div className="flex items-center justify-between gap-4">
           <div>
             <p className="text-sm font-bold uppercase tracking-[0.16em] text-slate-500">
-              Météo simulée
+              MÃ©tÃ©o simulÃ©e
             </p>
             <p className="mt-2 text-5xl font-black text-slate-950">
-              {weather.temperature}°C
+              {weather.temperature}Â°C
             </p>
           </div>
           <div className={`inline-flex h-20 w-20 items-center justify-center rounded-[1.5rem] ${isRainy ? "bg-sky-100 text-sky-700" : "bg-amber-100 text-amber-600"}`}>
@@ -43,12 +43,12 @@ export default function WeatherCard({ weather }: Props) {
 
 function getClothingAdvice(weather: Weather) {
   if (weather.condition === "rain") {
-    return "Prévoir veste imperméable et chaussures adaptées.";
+    return "PrÃ©voir veste impermÃ©able et chaussures adaptÃ©es.";
   }
 
   if (weather.temperature <= 10) {
-    return "Prévoir manteau, bonnet et chaussures chaudes.";
+    return "PrÃ©voir manteau, bonnet et chaussures chaudes.";
   }
 
-  return "Veste légère suffisante.";
+  return "Veste lÃ©gÃ¨re suffisante.";
 }

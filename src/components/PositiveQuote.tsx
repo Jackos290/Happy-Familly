@@ -1,4 +1,4 @@
-import { Save } from "lucide-react";
+﻿import { Save } from "lucide-react";
 import { FormEvent, useState } from "react";
 import type { AppData } from "../types";
 
@@ -22,8 +22,8 @@ export default function PositiveQuote({ data, onDataChange }: Props) {
 
   return (
     <div className="space-y-4">
-      <blockquote className="rounded-[1.5rem] bg-white/65 p-5 text-2xl font-bold leading-tight text-slate-950">
-        “{data.positiveQuote}”
+      <blockquote className="rounded-[1.5rem] bg-white/60 p-5 text-2xl font-bold leading-tight text-slate-950">
+        â€œ{data.positiveQuote}â€
       </blockquote>
       <form onSubmit={saveQuote} className="flex gap-3">
         <input
