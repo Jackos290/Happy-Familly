@@ -41,9 +41,10 @@ export async function saveRemoteAppData(data: AppData) {
 }
 
 export function subscribeToRemoteAppData(onData: (data: AppData) => void) {
-  if (!supabase) return () => undefined;
+  const client = supabase;
+  if (!client) return () => undefined;
 
-  const channel = supabase
+  const channel = client
     .channel("happy-familly-app-state")
     .on(
       "postgres_changes",
@@ -63,6 +64,6 @@ export function subscribeToRemoteAppData(onData: (data: AppData) => void) {
     .subscribe();
 
   return () => {
-    void supabase.removeChannel(channel);
+    void client.removeChannel(channel);
   };
 }
