@@ -6,7 +6,7 @@ export async function loadRemoteAppData() {
     const payload = await response.json();
 
     if (!response.ok) {
-      return { data: null, error: payload.error ?? "Erreur API Vercel" };
+      return { data: null, error: formatApiError(payload) };
     }
 
     return { data: (payload.data as AppData | null) ?? null, error: null };
@@ -30,7 +30,7 @@ export async function saveRemoteAppData(data: AppData) {
     const payload = await response.json();
 
     if (!response.ok) {
-      return payload.error ?? "Erreur API Vercel";
+      return formatApiError(payload);
     }
 
     return null;
@@ -41,4 +41,26 @@ export async function saveRemoteAppData(data: AppData) {
 
 export function subscribeToRemoteAppData() {
   return () => undefined;
+}
+
+function formatApiError(payload: any) {
+  const parts = [payload?.error ?? "Erreur API Vercel"];
+
+  if (payload?.cause?.code) {
+    parts.push(`code=${payload.cause.code}`);
+  }
+
+  if (payload?.cause?.hostname) {
+    parts.push(`host=${payload.cause.hostname}`);
+  }
+
+  if (payload?.cause?.message) {
+    parts.push(payload.cause.message);
+  }
+
+  if (payload?.supabaseUrl) {
+    parts.push(`url=${payload.supabaseUrl}`);
+  }
+
+  return parts.join(" | ");
 }
