@@ -10,7 +10,9 @@ type AppStateRow = {
 };
 
 export async function loadRemoteAppData() {
-  if (!supabase) return null;
+  if (!supabase) {
+    return { data: null, error: "Supabase non configuré" };
+  }
 
   const { data, error } = await supabase
     .from("app_state")
@@ -19,15 +21,16 @@ export async function loadRemoteAppData() {
     .maybeSingle<AppStateRow>();
 
   if (error) {
-    console.warn("Supabase load failed", error.message);
-    return null;
+    return { data: null, error: error.message };
   }
 
-  return data?.data ?? null;
+  return { data: data?.data ?? null, error: null };
 }
 
 export async function saveRemoteAppData(data: AppData) {
-  if (!supabase) return;
+  if (!supabase) {
+    return "Supabase non configuré";
+  }
 
   const { error } = await supabase.from("app_state").upsert({
     id: APP_STATE_ID,
@@ -36,8 +39,10 @@ export async function saveRemoteAppData(data: AppData) {
   });
 
   if (error) {
-    console.warn("Supabase save failed", error.message);
+    return error.message;
   }
+
+  return null;
 }
 
 export function subscribeToRemoteAppData(onData: (data: AppData) => void) {

@@ -26,7 +26,9 @@ export default function App() {
     }
 
     const timeout = window.setTimeout(() => {
-      void saveRemoteAppData(data).then(() => setSyncStatus("Synchronisé"));
+      void saveRemoteAppData(data).then((error) => {
+        setSyncStatus(error ? `Erreur Supabase: ${error}` : "Synchronisé");
+      });
     }, 500);
 
     return () => window.clearTimeout(timeout);
@@ -38,8 +40,12 @@ export default function App() {
     let mounted = true;
 
     async function hydrateRemoteData() {
-      const remoteData = await loadRemoteAppData();
+      const { data: remoteData, error } = await loadRemoteAppData();
       if (!mounted) return;
+
+      if (error) {
+        setSyncStatus(`Erreur Supabase: ${error}`);
+      }
 
       if (remoteData) {
         applyingRemoteRef.current = true;
@@ -49,8 +55,8 @@ export default function App() {
           applyingRemoteRef.current = false;
         }, 0);
       } else {
-        await saveRemoteAppData(loadAppData());
-        setSyncStatus("Synchronisé");
+        const saveError = await saveRemoteAppData(loadAppData());
+        setSyncStatus(saveError ? `Erreur Supabase: ${saveError}` : "Synchronisé");
       }
 
       remoteReadyRef.current = true;
@@ -68,7 +74,10 @@ export default function App() {
     });
 
     const polling = window.setInterval(async () => {
-      const remoteData = await loadRemoteAppData();
+      const { data: remoteData, error } = await loadRemoteAppData();
+      if (error) {
+        setSyncStatus(`Erreur Supabase: ${error}`);
+      }
       if (!remoteData) return;
 
       applyingRemoteRef.current = true;
