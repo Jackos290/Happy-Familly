@@ -1,4 +1,4 @@
-const SUPABASE_URL = "https://igszvnolnzswtdugqzdu.supabase.co";
+const SUPABASE_URL = "https://igszvnolnzswtdagqzdu.supabase.co";
 const SUPABASE_ANON_KEY =
   process.env.VITE_SUPABASE_ANON_KEY ||
   process.env.SUPABASE_ANON_KEY ||
