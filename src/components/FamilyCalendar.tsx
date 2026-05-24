@@ -24,35 +24,36 @@ export default function FamilyCalendar({ data, onDataChange, expanded = false, s
   const [cursorDate, setCursorDate] = useState(new Date());
 
   const dashboardEventsByDate = useMemo(() => {
-    const events = [...getSpecialEventsForDashboard(), ...data.calendarEvents].filter((event) =>
+    const events = uniqueEvents([...getSpecialEventsForDashboard(), ...data.calendarEvents]).filter((event) =>
       matchesSelectedMember(event, selectedMemberId),
     );
 
     return {
       today: events
         .filter((event) => getEventDateKey(event) === toDateKey(new Date()))
-        .sort((a, b) => a.time.localeCompare(b.time)),
+        .sort(compareEvents),
       tomorrow: events
         .filter((event) => {
           const tomorrow = new Date();
           tomorrow.setDate(tomorrow.getDate() + 1);
           return getEventDateKey(event) === toDateKey(tomorrow);
         })
-        .sort((a, b) => a.time.localeCompare(b.time)),
+        .sort(compareEvents),
     };
   }, [data.calendarEvents, selectedMemberId]);
 
   const range = getViewRange(cursorDate, view);
   const rangeEvents = useMemo(() => {
-    const events = [...getSpecialEventsForRange(range.start, range.end), ...data.calendarEvents].filter((event) =>
+    const events = uniqueEvents([...getSpecialEventsForRange(range.start, range.end), ...data.calendarEvents]).filter((event) =>
       matchesSelectedMember(event, selectedMemberId),
     );
+
     return events
       .filter((event) => {
         const eventDate = getEventDateKey(event);
         return eventDate >= toDateKey(range.start) && eventDate <= toDateKey(range.end);
       })
-      .sort((a, b) => `${getEventDateKey(a)} ${a.time}`.localeCompare(`${getEventDateKey(b)} ${b.time}`));
+      .sort(compareEvents);
   }, [data.calendarEvents, range.start, range.end, selectedMemberId]);
 
   useEffect(() => {
@@ -141,6 +142,8 @@ export default function FamilyCalendar({ data, onDataChange, expanded = false, s
 
       {view === "month" ? (
         <MonthGrid cursorDate={cursorDate} events={rangeEvents} data={data} />
+      ) : view === "week" ? (
+        <WeekGrid cursorDate={cursorDate} events={rangeEvents} data={data} />
       ) : (
         <AgendaList events={rangeEvents} data={data} />
       )}
@@ -195,15 +198,70 @@ function MonthGrid({ cursorDate, events, data }: { cursorDate: Date; events: Cal
         const key = toDateKey(day);
         const dayEvents = events.filter((event) => getEventDateKey(event) === key);
         const isCurrentMonth = day.getMonth() === cursorDate.getMonth();
+        const isToday = key === toDateKey(new Date());
         return (
-          <div key={key} className={`min-h-32 rounded-2xl bg-white p-3 ${isCurrentMonth ? "" : "opacity-45"}`}>
+          <div
+            key={key}
+            className={`min-h-32 rounded-2xl border p-3 ${
+              isToday ? "border-slate-950 bg-white" : "border-white/80 bg-white/70"
+            } ${isCurrentMonth ? "" : "opacity-45"}`}
+          >
             <p className="mb-2 text-sm font-black text-slate-800">{day.getDate()}</p>
             <div className="space-y-1">
               {dayEvents.slice(0, 4).map((event) => (
-                <EventPill key={event.id} event={event} data={data} />
+                <EventPill key={getEventIdentity(event)} event={event} data={data} />
               ))}
+              {dayEvents.length > 4 && (
+                <p className="rounded-xl bg-slate-100 px-2 py-1 text-xs font-black text-slate-500">
+                  +{dayEvents.length - 4}
+                </p>
+              )}
             </div>
           </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function WeekGrid({ cursorDate, events, data }: { cursorDate: Date; events: CalendarEvent[]; data: AppData }) {
+  const { start } = getViewRange(cursorDate, "week");
+  const days = Array.from({ length: 7 }, (_, index) => {
+    const day = atNoon(start);
+    day.setDate(start.getDate() + index);
+    return day;
+  });
+
+  return (
+    <div className="grid gap-3 lg:grid-cols-7">
+      {days.map((day) => {
+        const key = toDateKey(day);
+        const dayEvents = events.filter((event) => getEventDateKey(event) === key);
+        const isToday = key === toDateKey(new Date());
+
+        return (
+          <section
+            key={key}
+            className={`min-h-72 rounded-3xl border p-3 ${
+              isToday ? "border-slate-950 bg-white" : "border-white/80 bg-white/65"
+            }`}
+          >
+            <div className="mb-3">
+              <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-500">
+                {new Intl.DateTimeFormat("fr-FR", { weekday: "short" }).format(day)}
+              </p>
+              <p className="text-2xl font-black text-slate-950">{day.getDate()}</p>
+            </div>
+            <div className="space-y-2">
+              {dayEvents.length === 0 ? (
+                <p className="rounded-2xl bg-white/70 px-3 py-3 text-sm font-semibold text-slate-400">
+                  Rien
+                </p>
+              ) : (
+                dayEvents.map((event) => <EventCard key={getEventIdentity(event)} event={event} data={data} compact />)
+              )}
+            </div>
+          </section>
         );
       })}
     </div>
@@ -218,15 +276,7 @@ function AgendaList({ events, data }: { events: CalendarEvent[]; data: AppData }
   return (
     <div className="space-y-3">
       {events.map((event) => (
-        <div key={event.id} className="rounded-2xl bg-white px-4 py-3">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="font-black text-slate-950">{event.title}</p>
-              <p className="text-sm font-semibold text-slate-500">{formatDateLabel(getEventDateKey(event))}</p>
-            </div>
-            <time className="rounded-full bg-slate-100 px-3 py-1 text-sm font-bold">{event.time}</time>
-          </div>
-        </div>
+        <EventCard key={getEventIdentity(event)} event={event} data={data} showDate />
       ))}
     </div>
   );
@@ -237,26 +287,49 @@ function EventColumn({ title, events, data }: { title: string; events: CalendarE
     <div className="rounded-3xl bg-white/50 p-4">
       <h3 className="mb-3 text-sm font-bold uppercase tracking-[0.16em] text-slate-500">{title}</h3>
       <div className="space-y-3">
-        {events.map((event) => (
-          <div key={event.id} className="rounded-2xl bg-white px-4 py-3">
-            <div className="flex items-start justify-between gap-3">
-              <p className="font-bold text-slate-900">{event.title}</p>
-              <time className="rounded-full bg-slate-100 px-3 py-1 text-sm font-bold">{event.time}</time>
-            </div>
-            <EventMember event={event} data={data} />
-          </div>
-        ))}
+        {events.map((event) => <EventCard key={getEventIdentity(event)} event={event} data={data} />)}
       </div>
     </div>
   );
 }
 
 function EventPill({ event, data }: { event: CalendarEvent; data: AppData }) {
+  const color = getEventColor(event, data);
+
   return (
-    <div className="truncate rounded-xl bg-slate-100 px-2 py-1 text-xs font-bold text-slate-700">
+    <div className={`truncate rounded-xl border px-2 py-1 text-xs font-bold ${color}`}>
       {event.time !== "Toute la journée" && `${event.time} · `}
       {event.title}
       <EventMember event={event} data={data} small />
+    </div>
+  );
+}
+
+function EventCard({
+  event,
+  data,
+  compact = false,
+  showDate = false,
+}: {
+  event: CalendarEvent;
+  data: AppData;
+  compact?: boolean;
+  showDate?: boolean;
+}) {
+  const color = getEventColor(event, data);
+
+  return (
+    <div className={`rounded-2xl border px-4 py-3 shadow-sm ${color}`}>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className={`${compact ? "text-sm" : "text-base"} font-black text-slate-950`}>{event.title}</p>
+          {showDate && (
+            <p className="mt-1 text-sm font-semibold text-slate-600">{formatDateLabel(getEventDateKey(event))}</p>
+          )}
+        </div>
+        <time className="rounded-full bg-white/80 px-3 py-1 text-sm font-black text-slate-800">{event.time}</time>
+      </div>
+      <EventMember event={event} data={data} />
     </div>
   );
 }
@@ -297,6 +370,40 @@ function ViewButton({ active, children, onClick }: { active: boolean; children: 
   );
 }
 
+function uniqueEvents(events: CalendarEvent[]) {
+  const seen = new Set<string>();
+  return events.filter((event) => {
+    const identity = getEventIdentity(event);
+    if (seen.has(identity)) return false;
+    seen.add(identity);
+    return true;
+  });
+}
+
+function getEventIdentity(event: CalendarEvent) {
+  return [
+    getEventDateKey(event),
+    event.time,
+    event.title.trim().toLowerCase(),
+    event.personId ?? "special",
+  ].join("|");
+}
+
+function getEventColor(event: CalendarEvent, data: AppData) {
+  const memberIndex = data.familyMembers.findIndex((member) => member.id === event.personId);
+  const colors = [
+    "border-sky-200 bg-sky-50 text-sky-950",
+    "border-rose-200 bg-rose-50 text-rose-950",
+    "border-emerald-200 bg-emerald-50 text-emerald-950",
+    "border-violet-200 bg-violet-50 text-violet-950",
+  ];
+
+  if (memberIndex >= 0) return colors[memberIndex % colors.length];
+  if (event.title.includes("(FR)")) return "border-blue-200 bg-blue-50 text-blue-950";
+  if (event.title.includes("(LU)")) return "border-amber-200 bg-amber-50 text-amber-950";
+  return "border-slate-200 bg-slate-50 text-slate-950";
+}
+
 function getEventDateKey(event: CalendarEvent) {
   if (event.dateISO) return event.dateISO;
   const date = new Date();
@@ -306,6 +413,10 @@ function getEventDateKey(event: CalendarEvent) {
 
 function matchesSelectedMember(event: CalendarEvent, selectedMemberId: string | null) {
   return !selectedMemberId || event.personId === selectedMemberId;
+}
+
+function compareEvents(a: CalendarEvent, b: CalendarEvent) {
+  return `${getEventDateKey(a)} ${a.time}`.localeCompare(`${getEventDateKey(b)} ${b.time}`);
 }
 
 function getViewRange(date: Date, view: CalendarView) {
