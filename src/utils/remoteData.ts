@@ -1,5 +1,5 @@
 import type { AppData } from "../types";
-import { supabase } from "./supabase";
+import { getSupabaseConfigError, supabase } from "./supabase";
 
 const APP_STATE_ID = "happy-familly-main";
 
@@ -11,7 +11,7 @@ type AppStateRow = {
 
 export async function loadRemoteAppData() {
   if (!supabase) {
-    return { data: null, error: "Supabase non configuré" };
+    return { data: null, error: getSupabaseConfigError() ?? "Supabase non configuré" };
   }
 
   const { data, error } = await supabase
@@ -29,7 +29,7 @@ export async function loadRemoteAppData() {
 
 export async function saveRemoteAppData(data: AppData) {
   if (!supabase) {
-    return "Supabase non configuré";
+    return getSupabaseConfigError() ?? "Supabase non configuré";
   }
 
   const { error } = await supabase.from("app_state").upsert({
