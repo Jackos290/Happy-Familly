@@ -5,6 +5,7 @@ import type { AppData } from "./types";
 
 export default function App() {
   const [data, setData] = useState<AppData>(() => loadAppData());
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     saveAppData(data);
@@ -12,13 +13,13 @@ export default function App() {
 
   useEffect(() => {
     const interval = window.setInterval(() => {
-      window.location.reload();
+      setRefreshKey((key) => key + 1);
     }, 60_000);
 
     return () => window.clearInterval(interval);
   }, []);
 
   return (
-    <Dashboard data={data} onDataChange={setData} />
+    <Dashboard data={data} onDataChange={setData} refreshKey={refreshKey} />
   );
 }

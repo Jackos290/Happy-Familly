@@ -29,6 +29,7 @@ import WeatherCard from "./WeatherCard";
 type DashboardProps = {
   data: AppData;
   onDataChange: (data: AppData) => void;
+  refreshKey: number;
 };
 
 type PanelId = "calendar" | "tasks" | "weather" | "shopping" | "budget" | "quote" | "thanks";
@@ -44,7 +45,7 @@ type WakeLockNavigator = Navigator & {
   };
 };
 
-export default function Dashboard({ data, onDataChange }: DashboardProps) {
+export default function Dashboard({ data, onDataChange, refreshKey }: DashboardProps) {
   const wakeLockRef = useRef<WakeLockSentinelLike | null>(null);
   const [tabletModeActive, setTabletModeActive] = useState(false);
   const [tabletModeMessage, setTabletModeMessage] = useState("Prêt pour la tablette");
@@ -111,7 +112,7 @@ export default function Dashboard({ data, onDataChange }: DashboardProps) {
     }
 
     void loadHeaderForecast();
-  }, []);
+  }, [refreshKey]);
 
   return (
     <main className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,#e0f2fe_0,#f8fafc_34%,#fff7ed_72%,#f8fafc_100%)] px-4 py-4 text-slate-900 sm:px-6 lg:px-8">
@@ -132,7 +133,7 @@ export default function Dashboard({ data, onDataChange }: DashboardProps) {
                     key={hour.time}
                     className="rounded-2xl bg-white px-3 py-2 text-sm font-bold text-slate-700"
                   >
-                    {hour.time} · {hour.temperature}°C · pluie {hour.rain}%
+                    {getHourlyEmoji(hour.rain)} {hour.time} · {hour.temperature}°C · pluie {hour.rain}%
                   </span>
                 ))}
               </div>
@@ -223,6 +224,12 @@ export default function Dashboard({ data, onDataChange }: DashboardProps) {
       )}
     </main>
   );
+}
+
+function getHourlyEmoji(rain: number) {
+  if (rain >= 65) return "🌧️";
+  if (rain >= 30) return "🌦️";
+  return "☀️";
 }
 
 function Panel({
