@@ -7,25 +7,18 @@ import {
   saveRemoteAppData,
   subscribeToRemoteAppData,
 } from "./utils/remoteData";
-import {
-  isSupabaseConfigured,
-  supabaseDebugInfo,
-  testSupabaseConnection,
-} from "./utils/supabase";
 
 export default function App() {
   const [data, setData] = useState<AppData>(() => loadAppData());
   const [refreshKey, setRefreshKey] = useState(0);
-  const [syncStatus, setSyncStatus] = useState(
-    isSupabaseConfigured ? "Connexion Supabase..." : "Mode local",
-  );
-  const remoteReadyRef = useRef(!isSupabaseConfigured);
+  const [syncStatus, setSyncStatus] = useState("Connexion Supabase...");
+  const remoteReadyRef = useRef(false);
   const applyingRemoteRef = useRef(false);
 
   useEffect(() => {
     saveAppData(data);
 
-    if (!isSupabaseConfigured || !remoteReadyRef.current || applyingRemoteRef.current) {
+    if (!remoteReadyRef.current || applyingRemoteRef.current) {
       return;
     }
 
@@ -39,19 +32,9 @@ export default function App() {
   }, [data]);
 
   useEffect(() => {
-    if (!isSupabaseConfigured) return;
-
     let mounted = true;
 
     async function hydrateRemoteData() {
-      const connectionError = await testSupabaseConnection();
-      if (!mounted) return;
-
-      if (connectionError) {
-        setSyncStatus(`Erreur Supabase (${supabaseDebugInfo.urlHost}): ${connectionError}`);
-        return;
-      }
-
       const { data: remoteData, error } = await loadRemoteAppData();
       if (!mounted) return;
 

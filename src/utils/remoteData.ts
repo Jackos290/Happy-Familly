@@ -1,74 +1,44 @@
 import type { AppData } from "../types";
-import { getSupabaseConfigError, supabase } from "./supabase";
-
-const APP_STATE_ID = "happy-familly-main";
-
-type AppStateRow = {
-  id: string;
-  data: AppData;
-  updated_at: string;
-};
 
 export async function loadRemoteAppData() {
-  if (!supabase) {
-    return { data: null, error: getSupabaseConfigError() ?? "Supabase non configuré" };
+  try {
+    const response = await fetch("/api/app-state");
+    const payload = await response.json();
+
+    if (!response.ok) {
+      return { data: null, error: payload.error ?? "Erreur API Vercel" };
+    }
+
+    return { data: (payload.data as AppData | null) ?? null, error: null };
+  } catch (error) {
+    return {
+      data: null,
+      error: error instanceof Error ? error.message : "Erreur réseau inconnue",
+    };
   }
-
-  const { data, error } = await supabase
-    .from("app_state")
-    .select("data")
-    .eq("id", APP_STATE_ID)
-    .maybeSingle<AppStateRow>();
-
-  if (error) {
-    return { data: null, error: error.message };
-  }
-
-  return { data: data?.data ?? null, error: null };
 }
 
 export async function saveRemoteAppData(data: AppData) {
-  if (!supabase) {
-    return getSupabaseConfigError() ?? "Supabase non configuré";
+  try {
+    const response = await fetch("/api/app-state", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ data }),
+    });
+    const payload = await response.json();
+
+    if (!response.ok) {
+      return payload.error ?? "Erreur API Vercel";
+    }
+
+    return null;
+  } catch (error) {
+    return error instanceof Error ? error.message : "Erreur réseau inconnue";
   }
-
-  const { error } = await supabase.from("app_state").upsert({
-    id: APP_STATE_ID,
-    data,
-    updated_at: new Date().toISOString(),
-  });
-
-  if (error) {
-    return error.message;
-  }
-
-  return null;
 }
 
-export function subscribeToRemoteAppData(onData: (data: AppData) => void) {
-  const client = supabase;
-  if (!client) return () => undefined;
-
-  const channel = client
-    .channel("happy-familly-app-state")
-    .on(
-      "postgres_changes",
-      {
-        event: "*",
-        schema: "public",
-        table: "app_state",
-        filter: `id=eq.${APP_STATE_ID}`,
-      },
-      (payload) => {
-        const row = payload.new as AppStateRow | null;
-        if (row?.data) {
-          onData(row.data);
-        }
-      },
-    )
-    .subscribe();
-
-  return () => {
-    void client.removeChannel(channel);
-  };
+export function subscribeToRemoteAppData() {
+  return () => undefined;
 }
