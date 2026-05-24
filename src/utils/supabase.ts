@@ -3,14 +3,19 @@ import { SUPABASE_ANON_KEY, SUPABASE_URL } from "../config/supabaseConfig";
 
 const envSupabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const envSupabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
-const rawSupabaseUrl = envSupabaseUrl || SUPABASE_URL;
-const supabaseAnonKey = envSupabaseAnonKey || SUPABASE_ANON_KEY;
+const rawSupabaseUrl = SUPABASE_URL || envSupabaseUrl;
+const supabaseAnonKey = SUPABASE_ANON_KEY || envSupabaseAnonKey;
 const supabaseUrl = normalizeSupabaseUrl(rawSupabaseUrl);
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
 export const supabase = isSupabaseConfigured
-  ? createClient(supabaseUrl!, supabaseAnonKey!)
+  ? createClient(supabaseUrl!, supabaseAnonKey!, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+      },
+    })
   : null;
 
 export const supabaseDebugInfo = {
