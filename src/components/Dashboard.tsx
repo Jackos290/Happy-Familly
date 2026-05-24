@@ -313,9 +313,9 @@ function getPanelTitle(panel: PanelId) {
 function renderExpandedPanel(panel: PanelId, data: AppData, onDataChange: (data: AppData) => void) {
   switch (panel) {
     case "calendar":
-      return <FamilyCalendar data={data} onDataChange={onDataChange} />;
+      return <FamilyCalendar data={data} onDataChange={onDataChange} expanded />;
     case "tasks":
-      return <TaskBoard data={data} onDataChange={onDataChange} />;
+      return <TaskBoard data={data} onDataChange={onDataChange} expanded />;
     case "weather":
       return <WeatherCard weather={data.weather} />;
     case "shopping":

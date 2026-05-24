@@ -9,6 +9,7 @@ export type CalendarEvent = {
   id: string;
   title: string;
   date: "today" | "tomorrow";
+  dateISO?: string;
   time: string;
   personId?: string;
 };
@@ -18,6 +19,8 @@ export type Task = {
   title: string;
   personId: string;
   done: boolean;
+  recurrence?: "none" | "daily" | "weekly";
+  completedAt?: string;
 };
 
 export type ShoppingItem = {

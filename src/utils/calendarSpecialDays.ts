@@ -18,6 +18,19 @@ export function getSpecialEventsForDashboard(date = new Date()): CalendarEvent[]
       id: `special-${day.country}-${day.date}-${day.title}`,
       title: `${day.title} (${day.country})`,
       date: day.date === today ? "today" : "tomorrow",
+      dateISO: day.date,
+      time: "Toute la journée",
+    }));
+}
+
+export function getSpecialEventsForRange(start: Date, end: Date): CalendarEvent[] {
+  return getSpecialDays(start.getFullYear(), end.getFullYear())
+    .filter((day) => day.date >= toDateKey(start) && day.date <= toDateKey(end))
+    .map((day) => ({
+      id: `special-${day.country}-${day.date}-${day.title}`,
+      title: `${day.title} (${day.country})`,
+      date: isTomorrow(day.date) ? "tomorrow" : "today",
+      dateISO: day.date,
       time: "Toute la journée",
     }));
 }
@@ -107,6 +120,12 @@ function relative(date: Date, offset: number, title: string, country: SpecialDay
 
 function toDateKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function isTomorrow(dateKey: string) {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return dateKey === toDateKey(tomorrow);
 }
 
 function getEasterDate(year: number) {
