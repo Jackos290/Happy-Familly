@@ -2,11 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import Dashboard from "./components/Dashboard";
 import type { AppData } from "./types";
 import { loadAppData, saveAppData } from "./utils/localStorage";
-import {
-  loadRemoteAppData,
-  saveRemoteAppData,
-  subscribeToRemoteAppData,
-} from "./utils/remoteData";
+import { loadRemoteAppData, saveRemoteAppData } from "./utils/remoteData";
 
 export default function App() {
   const [data, setData] = useState<AppData>(() => loadAppData());
@@ -34,12 +30,13 @@ export default function App() {
   useEffect(() => {
     let mounted = true;
 
-    async function hydrateRemoteData() {
+    async function applyRemoteData() {
       const { data: remoteData, error } = await loadRemoteAppData();
       if (!mounted) return;
 
       if (error) {
         setSyncStatus(`Erreur Supabase: ${error}`);
+        return;
       }
 
       if (remoteData) {
@@ -57,36 +54,15 @@ export default function App() {
       remoteReadyRef.current = true;
     }
 
-    void hydrateRemoteData();
+    void applyRemoteData();
 
-    const unsubscribe = subscribeToRemoteAppData((remoteData) => {
-      applyingRemoteRef.current = true;
-      setData(remoteData);
-      setSyncStatus("Mis à jour");
-      window.setTimeout(() => {
-        applyingRemoteRef.current = false;
-      }, 0);
-    });
-
-    const polling = window.setInterval(async () => {
-      const { data: remoteData, error } = await loadRemoteAppData();
-      if (error) {
-        setSyncStatus(`Erreur Supabase: ${error}`);
-      }
-      if (!remoteData) return;
-
-      applyingRemoteRef.current = true;
-      setData(remoteData);
-      setSyncStatus("Synchronisé");
-      window.setTimeout(() => {
-        applyingRemoteRef.current = false;
-      }, 0);
+    const polling = window.setInterval(() => {
+      void applyRemoteData();
     }, 5_000);
 
     return () => {
       mounted = false;
       window.clearInterval(polling);
-      unsubscribe();
     };
   }, []);
 
