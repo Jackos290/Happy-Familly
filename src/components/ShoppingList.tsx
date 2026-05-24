@@ -60,17 +60,15 @@ export default function ShoppingList({ data, onDataChange, expanded = false }: P
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = () => {
+    void resizeImage(file, 720).then((photoUrl) => {
       onDataChange({
         ...data,
         shoppingItems: data.shoppingItems.map((item) =>
-          item.id === id ? { ...item, photoUrl: String(reader.result) } : item,
+          item.id === id ? { ...item, photoUrl } : item,
         ),
       });
       event.target.value = "";
-    };
-    reader.readAsDataURL(file);
+    });
   }
 
   return (
@@ -172,7 +170,7 @@ function ShoppingGroup({
       )}
       {items.map((item) => (
         <div key={item.id} className="flex min-h-16 items-center gap-3 rounded-2xl bg-white px-3 py-2">
-          {expanded && (
+          {(expanded || item.photoUrl) && (
             <div className="h-14 w-14 shrink-0 overflow-hidden rounded-2xl bg-slate-100">
               {item.photoUrl ? (
                 <button
@@ -231,4 +229,38 @@ function ShoppingGroup({
       ))}
     </div>
   );
+}
+
+function resizeImage(file: File, maxSize: number) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onerror = () => reject(new Error("Impossible de lire la photo"));
+    reader.onload = () => {
+      const image = new Image();
+
+      image.onerror = () => reject(new Error("Impossible de charger la photo"));
+      image.onload = () => {
+        const ratio = Math.min(1, maxSize / Math.max(image.width, image.height));
+        const width = Math.max(1, Math.round(image.width * ratio));
+        const height = Math.max(1, Math.round(image.height * ratio));
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+
+        const context = canvas.getContext("2d");
+        if (!context) {
+          reject(new Error("Impossible de préparer la photo"));
+          return;
+        }
+
+        context.drawImage(image, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", 0.82));
+      };
+
+      image.src = String(reader.result);
+    };
+
+    reader.readAsDataURL(file);
+  });
 }
