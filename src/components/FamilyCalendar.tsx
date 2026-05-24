@@ -1,6 +1,7 @@
 ﻿import { Plus } from "lucide-react";
 import { FormEvent, useMemo, useState } from "react";
 import type { AppData, CalendarEvent } from "../types";
+import { getSpecialEventsForDashboard } from "../utils/calendarSpecialDays";
 import { createId } from "../utils/localStorage";
 
 type Props = {
@@ -15,14 +16,18 @@ export default function FamilyCalendar({ data, onDataChange }: Props) {
   const [personId, setPersonId] = useState(data.familyMembers[0]?.id ?? "");
 
   const eventsByDate = useMemo(
-    () => ({
-      today: data.calendarEvents
-        .filter((event) => event.date === "today")
-        .sort((a, b) => a.time.localeCompare(b.time)),
-      tomorrow: data.calendarEvents
-        .filter((event) => event.date === "tomorrow")
-        .sort((a, b) => a.time.localeCompare(b.time)),
-    }),
+    () => {
+      const events = [...getSpecialEventsForDashboard(), ...data.calendarEvents];
+
+      return {
+        today: events
+          .filter((event) => event.date === "today")
+          .sort((a, b) => a.time.localeCompare(b.time)),
+        tomorrow: events
+          .filter((event) => event.date === "tomorrow")
+          .sort((a, b) => a.time.localeCompare(b.time)),
+      };
+    },
     [data.calendarEvents],
   );
 

@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { AppData } from "../types";
+import type { HourlyForecast } from "../utils/weather";
+import { fetchGorcyForecast } from "../utils/weather";
 import BudgetCard from "./BudgetCard";
 import DailyThanks from "./DailyThanks";
 import FamilyCalendar from "./FamilyCalendar";
@@ -48,6 +50,7 @@ export default function Dashboard({ data, onDataChange }: DashboardProps) {
   const [tabletModeMessage, setTabletModeMessage] = useState("Prêt pour la tablette");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [expandedPanel, setExpandedPanel] = useState<PanelId | null>(null);
+  const [nextHours, setNextHours] = useState<HourlyForecast[]>([]);
 
   const now = new Intl.DateTimeFormat("fr-FR", {
     weekday: "long",
@@ -97,6 +100,19 @@ export default function Dashboard({ data, onDataChange }: DashboardProps) {
     };
   }, [tabletModeActive]);
 
+  useEffect(() => {
+    async function loadHeaderForecast() {
+      try {
+        const forecast = await fetchGorcyForecast();
+        setNextHours(forecast.nextHours);
+      } catch {
+        setNextHours([]);
+      }
+    }
+
+    void loadHeaderForecast();
+  }, []);
+
   return (
     <main className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,#e0f2fe_0,#f8fafc_34%,#fff7ed_72%,#f8fafc_100%)] px-4 py-4 text-slate-900 sm:px-6 lg:px-8">
       <div className="mx-auto flex max-w-[1500px] flex-col gap-5">
@@ -109,23 +125,33 @@ export default function Dashboard({ data, onDataChange }: DashboardProps) {
               Bonjour la famille
             </h1>
             <p className="mt-2 text-lg capitalize text-slate-600">{now}</p>
+            {nextHours.length > 0 && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {nextHours.map((hour) => (
+                  <span
+                    key={hour.time}
+                    className="rounded-2xl bg-white px-3 py-2 text-sm font-bold text-slate-700"
+                  >
+                    {hour.time} · {hour.temperature}°C · pluie {hour.rain}%
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
           <div className="flex flex-wrap items-center gap-3">
             {data.familyMembers.map((member) => (
               <span
                 key={member.id}
-                className={`inline-flex items-center gap-2 rounded-full py-2 pl-2 pr-4 text-sm font-bold ${member.color}`}
+                className="inline-flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-white shadow-sm"
+                title={member.name}
               >
-                <span className="h-8 w-8 overflow-hidden rounded-full bg-white/70">
-                  {member.photoUrl ? (
-                    <img src={member.photoUrl} alt={member.name} className="h-full w-full object-cover" />
-                  ) : (
-                    <span className="flex h-full w-full items-center justify-center">
-                      {member.name.slice(0, 1).toUpperCase()}
-                    </span>
-                  )}
-                </span>
-                {member.name}
+                {member.photoUrl ? (
+                  <img src={member.photoUrl} alt={member.name} className="h-full w-full object-cover" />
+                ) : (
+                  <span className={`flex h-full w-full items-center justify-center text-sm font-black ${member.color}`}>
+                    {member.name.slice(0, 1).toUpperCase()}
+                  </span>
+                )}
               </span>
             ))}
             <button
