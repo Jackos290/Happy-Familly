@@ -1,4 +1,4 @@
-import { Camera, Check, Plus, Trash2 } from "lucide-react";
+import { Camera, Check, Plus, Trash2, X } from "lucide-react";
 import { FormEvent, useMemo, useState, type ChangeEvent } from "react";
 import type { AppData } from "../types";
 import { createId } from "../utils/localStorage";
@@ -9,8 +9,14 @@ type Props = {
   expanded?: boolean;
 };
 
+type PhotoPreview = {
+  src: string;
+  label: string;
+};
+
 export default function ShoppingList({ data, onDataChange, expanded = false }: Props) {
   const [label, setLabel] = useState("");
+  const [previewPhoto, setPreviewPhoto] = useState<PhotoPreview | null>(null);
 
   const shoppingGroups = useMemo(
     () => ({
@@ -34,11 +40,11 @@ export default function ShoppingList({ data, onDataChange, expanded = false }: P
     setLabel("");
   }
 
-  function toggleItem(id: string) {
+  function setItemChecked(id: string, checked: boolean) {
     onDataChange({
       ...data,
       shoppingItems: data.shoppingItems.map((item) =>
-        item.id === id ? { ...item, checked: !item.checked } : item,
+        item.id === id ? { ...item, checked } : item,
       ),
     });
   }
@@ -62,6 +68,7 @@ export default function ShoppingList({ data, onDataChange, expanded = false }: P
           item.id === id ? { ...item, photoUrl: String(reader.result) } : item,
         ),
       });
+      event.target.value = "";
     };
     reader.readAsDataURL(file);
   }
@@ -73,17 +80,21 @@ export default function ShoppingList({ data, onDataChange, expanded = false }: P
           <ShoppingGroup
             title="À acheter"
             items={shoppingGroups.todo}
-            onToggle={toggleItem}
+            targetChecked={true}
+            onSetChecked={setItemChecked}
             onDelete={deleteItem}
             onPhoto={updatePhoto}
+            onPreviewPhoto={setPreviewPhoto}
             expanded
           />
           <ShoppingGroup
             title="Déjà achetés"
             items={shoppingGroups.done}
-            onToggle={toggleItem}
+            targetChecked={false}
+            onSetChecked={setItemChecked}
             onDelete={deleteItem}
             onPhoto={updatePhoto}
+            onPreviewPhoto={setPreviewPhoto}
             expanded
           />
         </div>
@@ -91,9 +102,11 @@ export default function ShoppingList({ data, onDataChange, expanded = false }: P
         <ShoppingGroup
           title=""
           items={data.shoppingItems.slice(0, 5)}
-          onToggle={toggleItem}
+          targetChecked={true}
+          onSetChecked={setItemChecked}
           onDelete={deleteItem}
           onPhoto={updatePhoto}
+          onPreviewPhoto={setPreviewPhoto}
         />
       )}
 
@@ -108,6 +121,24 @@ export default function ShoppingList({ data, onDataChange, expanded = false }: P
           <Plus className="h-5 w-5" />
         </button>
       </form>
+
+      {previewPhoto && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm">
+          <div className="relative max-h-[92vh] w-full max-w-4xl overflow-hidden rounded-[2rem] bg-white p-4 shadow-glass">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h3 className="text-xl font-black text-slate-950">{previewPhoto.label}</h3>
+              <button onClick={() => setPreviewPhoto(null)} className="icon-button" title="Fermer la photo">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <img
+              src={previewPhoto.src}
+              alt={previewPhoto.label}
+              className="max-h-[76vh] w-full rounded-3xl object-contain"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -115,16 +146,20 @@ export default function ShoppingList({ data, onDataChange, expanded = false }: P
 function ShoppingGroup({
   title,
   items,
-  onToggle,
+  targetChecked,
+  onSetChecked,
   onDelete,
   onPhoto,
+  onPreviewPhoto,
   expanded = false,
 }: {
   title: string;
   items: AppData["shoppingItems"];
-  onToggle: (id: string) => void;
+  targetChecked: boolean;
+  onSetChecked: (id: string, checked: boolean) => void;
   onDelete: (id: string) => void;
   onPhoto: (id: string, event: ChangeEvent<HTMLInputElement>) => void;
+  onPreviewPhoto: (photo: PhotoPreview) => void;
   expanded?: boolean;
 }) {
   return (
@@ -140,7 +175,13 @@ function ShoppingGroup({
           {expanded && (
             <div className="h-14 w-14 shrink-0 overflow-hidden rounded-2xl bg-slate-100">
               {item.photoUrl ? (
-                <img src={item.photoUrl} alt={item.label} className="h-full w-full object-cover" />
+                <button
+                  onClick={() => onPreviewPhoto({ src: item.photoUrl ?? "", label: item.label })}
+                  className="h-full w-full"
+                  title="Voir la photo en grand"
+                >
+                  <img src={item.photoUrl} alt={item.label} className="h-full w-full object-cover" />
+                </button>
               ) : (
                 <label className="flex h-full w-full cursor-pointer items-center justify-center text-slate-400">
                   <Camera className="h-5 w-5" />
@@ -155,13 +196,13 @@ function ShoppingGroup({
             </div>
           )}
           <button
-            onClick={() => onToggle(item.id)}
+            onClick={() => onSetChecked(item.id, targetChecked)}
             className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border ${
               item.checked
                 ? "border-emerald-400 bg-emerald-500 text-white"
                 : "border-slate-200 bg-slate-50 text-transparent"
             }`}
-            title="Cocher"
+            title={targetChecked ? "Marquer comme acheté" : "Remettre à acheter"}
           >
             <Check className="h-4 w-4" />
           </button>
