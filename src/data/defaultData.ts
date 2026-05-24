@@ -1,4 +1,5 @@
 import type { AppData, FamilyMember } from "../types";
+import { getDailyQuote } from "../utils/dailyQuote";
 
 export const familyMembers: FamilyMember[] = [
   { id: "papa", name: "Papa", color: "bg-sky-100 text-sky-800" },
@@ -12,7 +13,7 @@ export const defaultData: AppData = {
   calendarEvents: [
     {
       id: "event-1",
-      title: "Ecole et garderie",
+      title: "École et garderie",
       date: "today",
       time: "08:20",
       personId: "enfant-1",
@@ -46,8 +47,9 @@ export const defaultData: AppData = {
     temperature: 9,
     condition: "rain",
     windKmh: 24,
+    label: "Pluie",
   },
-  positiveQuote: "Aujourd'hui, on avance ensemble, chacun à son rythme.",
+  positiveQuote: getDailyQuote(),
   thanksMessages: [
     {
       id: "thanks-1",

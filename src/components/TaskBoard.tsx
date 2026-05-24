@@ -82,7 +82,7 @@ export default function TaskBoard({ data, onDataChange }: Props) {
           className="field"
           value={title}
           onChange={(event) => setTitle(event.target.value)}
-          placeholder="Nouvelle tÃ¢che"
+          placeholder="Nouvelle tâche"
         />
         <select
           className="field"
@@ -95,7 +95,7 @@ export default function TaskBoard({ data, onDataChange }: Props) {
             </option>
           ))}
         </select>
-        <button className="icon-button" title="Ajouter la tÃ¢che">
+        <button className="icon-button" title="Ajouter la tâche">
           <Plus className="h-5 w-5" />
         </button>
       </form>

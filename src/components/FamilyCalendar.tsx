@@ -58,7 +58,7 @@ export default function FamilyCalendar({ data, onDataChange }: Props) {
           className="field"
           value={title}
           onChange={(event) => setTitle(event.target.value)}
-          placeholder="Ajouter un Ã©vÃ©nement"
+          placeholder="Ajouter un événement"
         />
         <div className="grid grid-cols-2 gap-3 md:grid-cols-[1fr_1fr_1.3fr_auto]">
           <input
@@ -86,7 +86,7 @@ export default function FamilyCalendar({ data, onDataChange }: Props) {
               </option>
             ))}
           </select>
-          <button className="icon-button" title="Ajouter l'Ã©vÃ©nement">
+          <button className="icon-button" title="Ajouter l'événement">
             <Plus className="h-5 w-5" />
           </button>
         </div>

@@ -1,7 +1,8 @@
 import { defaultData } from "../data/defaultData";
 import type { AppData } from "../types";
+import { getDailyQuote } from "./dailyQuote";
 
-const STORAGE_KEY = "bien-sur-ludo:data:v1";
+const STORAGE_KEY = "happy-familly:data:v2";
 
 export function loadAppData(): AppData {
   try {
@@ -13,6 +14,7 @@ export function loadAppData(): AppData {
     return {
       ...defaultData,
       ...JSON.parse(rawData),
+      positiveQuote: getDailyQuote(),
     };
   } catch {
     return defaultData;

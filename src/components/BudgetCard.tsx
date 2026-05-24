@@ -52,7 +52,7 @@ export default function BudgetCard({ data, onDataChange }: Props) {
       <div className="rounded-[1.5rem] bg-white/60 p-5">
         <div className="grid grid-cols-3 gap-3 text-center">
           <Metric label="Budget" value={euros.format(data.budget.monthlyTotal)} />
-          <Metric label="DÃ©pensÃ©" value={euros.format(budget.spent)} />
+          <Metric label="Dépensé" value={euros.format(budget.spent)} />
           <Metric label="Reste" value={euros.format(budget.remaining)} />
         </div>
         <div className="mt-5 h-5 overflow-hidden rounded-full bg-slate-100">
@@ -62,7 +62,7 @@ export default function BudgetCard({ data, onDataChange }: Props) {
           />
         </div>
         <p className="mt-2 text-right text-sm font-bold text-slate-500">
-          {Math.round(budget.percent)}% utilisÃ©
+          {Math.round(budget.percent)}% utilisé
         </p>
       </div>
 
@@ -80,7 +80,7 @@ export default function BudgetCard({ data, onDataChange }: Props) {
           className="field"
           value={label}
           onChange={(event) => setLabel(event.target.value)}
-          placeholder="Nouvelle dÃ©pense"
+          placeholder="Nouvelle dépense"
         />
         <input
           className="field"
@@ -89,9 +89,9 @@ export default function BudgetCard({ data, onDataChange }: Props) {
           step="1"
           value={amount}
           onChange={(event) => setAmount(event.target.value)}
-          placeholder="â‚¬"
+          placeholder="€"
         />
-        <button className="icon-button" title="Ajouter la dÃ©pense">
+        <button className="icon-button" title="Ajouter la dépense">
           <Plus className="h-5 w-5" />
         </button>
       </form>

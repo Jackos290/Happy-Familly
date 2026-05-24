@@ -1,22 +1,24 @@
-﻿import {
+import {
   CalendarDays,
   CheckSquare,
-  Maximize2,
+  Expand,
   Heart,
+  Maximize2,
   PiggyBank,
   Quote,
   RefreshCw,
+  Settings,
   ShieldCheck,
   ShoppingBasket,
   SunMedium,
-  UsersRound,
+  X,
 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { AppData } from "../types";
 import BudgetCard from "./BudgetCard";
 import DailyThanks from "./DailyThanks";
-import FamilySettings from "./FamilySettings";
 import FamilyCalendar from "./FamilyCalendar";
+import FamilySettings from "./FamilySettings";
 import PositiveQuote from "./PositiveQuote";
 import ShoppingList from "./ShoppingList";
 import TaskBoard from "./TaskBoard";
@@ -26,6 +28,8 @@ type DashboardProps = {
   data: AppData;
   onDataChange: (data: AppData) => void;
 };
+
+type PanelId = "calendar" | "tasks" | "weather" | "shopping" | "budget" | "quote" | "thanks";
 
 type WakeLockSentinelLike = {
   release: () => Promise<void>;
@@ -41,7 +45,9 @@ type WakeLockNavigator = Navigator & {
 export default function Dashboard({ data, onDataChange }: DashboardProps) {
   const wakeLockRef = useRef<WakeLockSentinelLike | null>(null);
   const [tabletModeActive, setTabletModeActive] = useState(false);
-  const [tabletModeMessage, setTabletModeMessage] = useState("Pret pour la tablette");
+  const [tabletModeMessage, setTabletModeMessage] = useState("Prêt pour la tablette");
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [expandedPanel, setExpandedPanel] = useState<PanelId | null>(null);
 
   const now = new Intl.DateTimeFormat("fr-FR", {
     weekday: "long",
@@ -61,9 +67,9 @@ export default function Dashboard({ data, onDataChange }: DashboardProps) {
       wakeLockRef.current.addEventListener("release", () => {
         wakeLockRef.current = null;
       });
-      setTabletModeMessage("Plein ecran et anti-veille actifs");
+      setTabletModeMessage("Plein écran et anti-veille actifs");
     } catch {
-      setTabletModeMessage("Anti-veille refuse par le navigateur");
+      setTabletModeMessage("Anti-veille refusé par le navigateur");
     }
   }
 
@@ -112,11 +118,7 @@ export default function Dashboard({ data, onDataChange }: DashboardProps) {
               >
                 <span className="h-8 w-8 overflow-hidden rounded-full bg-white/70">
                   {member.photoUrl ? (
-                    <img
-                      src={member.photoUrl}
-                      alt={member.name}
-                      className="h-full w-full object-cover"
-                    />
+                    <img src={member.photoUrl} alt={member.name} className="h-full w-full object-cover" />
                   ) : (
                     <span className="flex h-full w-full items-center justify-center">
                       {member.name.slice(0, 1).toUpperCase()}
@@ -126,6 +128,13 @@ export default function Dashboard({ data, onDataChange }: DashboardProps) {
                 {member.name}
               </span>
             ))}
+            <button
+              onClick={() => setSettingsOpen(true)}
+              className="icon-button"
+              title="Options famille"
+            >
+              <Settings className="h-5 w-5" />
+            </button>
             <span className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-600">
               <RefreshCw className="h-4 w-4" />
               1 min
@@ -134,11 +143,7 @@ export default function Dashboard({ data, onDataChange }: DashboardProps) {
               onClick={activateTabletMode}
               className="inline-flex min-h-12 items-center gap-2 rounded-full bg-slate-950 px-5 text-sm font-bold text-white transition hover:bg-slate-700"
             >
-              {tabletModeActive ? (
-                <ShieldCheck className="h-4 w-4" />
-              ) : (
-                <Maximize2 className="h-4 w-4" />
-              )}
+              {tabletModeActive ? <ShieldCheck className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
               Mode tablette
             </button>
           </div>
@@ -148,64 +153,144 @@ export default function Dashboard({ data, onDataChange }: DashboardProps) {
         </p>
 
         <section className="grid auto-rows-fr gap-5 lg:grid-cols-12">
-          <Panel className="lg:col-span-12" icon={<UsersRound />} title="Famille">
-            <FamilySettings data={data} onDataChange={onDataChange} />
-          </Panel>
-
-          <Panel className="lg:col-span-5" icon={<CalendarDays />} title="Calendrier">
+          <Panel id="calendar" className="lg:col-span-5" icon={<CalendarDays />} title="Calendrier" onExpand={setExpandedPanel}>
             <FamilyCalendar data={data} onDataChange={onDataChange} />
           </Panel>
 
-          <Panel className="lg:col-span-4" icon={<CheckSquare />} title="TÃ¢ches">
+          <Panel id="tasks" className="lg:col-span-4" icon={<CheckSquare />} title="Tâches" onExpand={setExpandedPanel}>
             <TaskBoard data={data} onDataChange={onDataChange} />
           </Panel>
 
-          <Panel className="lg:col-span-3" icon={<SunMedium />} title="Demain">
+          <Panel id="weather" className="lg:col-span-3" icon={<SunMedium />} title="Météo Gorcy" onExpand={setExpandedPanel}>
             <WeatherCard weather={data.weather} />
           </Panel>
 
-          <Panel className="lg:col-span-4" icon={<ShoppingBasket />} title="Courses">
+          <Panel id="shopping" className="lg:col-span-4" icon={<ShoppingBasket />} title="Courses" onExpand={setExpandedPanel}>
             <ShoppingList data={data} onDataChange={onDataChange} />
           </Panel>
 
-          <Panel className="lg:col-span-4" icon={<PiggyBank />} title="Budget">
+          <Panel id="budget" className="lg:col-span-4" icon={<PiggyBank />} title="Budget" onExpand={setExpandedPanel}>
             <BudgetCard data={data} onDataChange={onDataChange} />
           </Panel>
 
           <div className="grid gap-5 lg:col-span-4">
-            <Panel icon={<Quote />} title="Phrase du jour">
+            <Panel id="quote" icon={<Quote />} title="Phrase du jour" onExpand={setExpandedPanel}>
               <PositiveQuote data={data} onDataChange={onDataChange} />
             </Panel>
-            <Panel icon={<Heart />} title="Merci">
+            <Panel id="thanks" icon={<Heart />} title="Merci" onExpand={setExpandedPanel}>
               <DailyThanks data={data} onDataChange={onDataChange} />
             </Panel>
           </div>
         </section>
       </div>
+
+      {settingsOpen && (
+        <Modal title="Options famille" onClose={() => setSettingsOpen(false)}>
+          <FamilySettings data={data} onDataChange={onDataChange} />
+        </Modal>
+      )}
+
+      {expandedPanel && (
+        <Modal title={getPanelTitle(expandedPanel)} onClose={() => setExpandedPanel(null)} wide>
+          {renderExpandedPanel(expandedPanel, data, onDataChange)}
+        </Modal>
+      )}
     </main>
   );
 }
 
 function Panel({
+  id,
   title,
   icon,
   children,
+  onExpand,
   className = "",
 }: {
+  id: PanelId;
   title: string;
   icon: ReactNode;
   children: ReactNode;
+  onExpand: (panel: PanelId) => void;
   className?: string;
 }) {
   return (
-    <article className={`glass-panel rounded-[1.75rem] p-5 ${className}`}>
-      <div className="mb-4 flex items-center gap-3">
+    <article
+      onClick={() => onExpand(id)}
+      className={`glass-panel cursor-pointer rounded-[1.75rem] p-5 ${className}`}
+    >
+      <button
+        onClick={() => onExpand(id)}
+        className="mb-4 flex w-full items-center gap-3 text-left"
+        title={`Ouvrir ${title} en grand`}
+      >
         <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-950 text-white [&_svg]:h-5 [&_svg]:w-5">
           {icon}
         </span>
-        <h2 className="text-xl font-bold text-slate-950">{title}</h2>
-      </div>
-      {children}
+        <h2 className="flex-1 text-xl font-bold text-slate-950">{title}</h2>
+        <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white text-slate-500">
+          <Expand className="h-4 w-4" />
+        </span>
+      </button>
+      <div onClick={(event) => event.stopPropagation()}>{children}</div>
     </article>
   );
+}
+
+function Modal({
+  title,
+  children,
+  onClose,
+  wide = false,
+}: {
+  title: string;
+  children: ReactNode;
+  onClose: () => void;
+  wide?: boolean;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm">
+      <section className={`max-h-[92vh] w-full overflow-auto rounded-[2rem] bg-slate-50 p-5 shadow-glass ${wide ? "max-w-6xl" : "max-w-3xl"}`}>
+        <div className="mb-5 flex items-center justify-between gap-4">
+          <h2 className="text-2xl font-black text-slate-950">{title}</h2>
+          <button onClick={onClose} className="icon-button" title="Fermer">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        {children}
+      </section>
+    </div>
+  );
+}
+
+function getPanelTitle(panel: PanelId) {
+  const titles: Record<PanelId, string> = {
+    calendar: "Calendrier",
+    tasks: "Tâches",
+    weather: "Météo de Gorcy",
+    shopping: "Courses",
+    budget: "Budget",
+    quote: "Phrase du jour",
+    thanks: "Merci",
+  };
+  return titles[panel];
+}
+
+function renderExpandedPanel(panel: PanelId, data: AppData, onDataChange: (data: AppData) => void) {
+  switch (panel) {
+    case "calendar":
+      return <FamilyCalendar data={data} onDataChange={onDataChange} />;
+    case "tasks":
+      return <TaskBoard data={data} onDataChange={onDataChange} />;
+    case "weather":
+      return <WeatherCard weather={data.weather} />;
+    case "shopping":
+      return <ShoppingList data={data} onDataChange={onDataChange} expanded />;
+    case "budget":
+      return <BudgetCard data={data} onDataChange={onDataChange} />;
+    case "quote":
+      return <PositiveQuote data={data} onDataChange={onDataChange} />;
+    case "thanks":
+      return <DailyThanks data={data} onDataChange={onDataChange} />;
+  }
 }

@@ -45,7 +45,7 @@ export default function DailyThanks({ data, onDataChange }: Props) {
           className="field"
           value={text}
           onChange={(event) => setText(event.target.value)}
-          placeholder="Moment apprÃ©ciÃ©"
+          placeholder="Moment apprécié"
         />
         <select
           className="field"

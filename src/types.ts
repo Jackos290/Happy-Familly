@@ -24,12 +24,16 @@ export type ShoppingItem = {
   id: string;
   label: string;
   checked: boolean;
+  photoUrl?: string;
 };
 
 export type Weather = {
   temperature: number;
   condition: "sun" | "rain";
   windKmh: number;
+  label?: string;
+  minTemperature?: number;
+  maxTemperature?: number;
 };
 
 export type ThanksMessage = {
