@@ -15,8 +15,10 @@ export default function App() {
   const pendingLocalSaveRef = useRef(false);
   const savingRemoteRef = useRef(false);
   const lastRemoteUpdatedAtRef = useRef<string | null>(null);
+  const localDataRef = useRef(data);
 
   useEffect(() => {
+    localDataRef.current = data;
     saveAppData(data);
 
     if (!remoteReadyRef.current || applyingRemoteRef.current || !pendingLocalSaveRef.current) {
@@ -52,6 +54,14 @@ export default function App() {
       if (error) {
         remoteReadyRef.current = true;
         setSyncStatus(`Erreur Supabase: ${error}`);
+
+        if (error.toLowerCase().includes("statement timeout")) {
+          const result = await saveRemoteAppData(localDataRef.current);
+          if (result.updatedAt) {
+            lastRemoteUpdatedAtRef.current = result.updatedAt;
+          }
+          setSyncStatus(result.error ? `Erreur Supabase: ${result.error}` : "Synchronisé");
+        }
         return;
       }
 
@@ -64,7 +74,7 @@ export default function App() {
         if (hasNewRemoteData) {
           applyingRemoteRef.current = true;
           lastRemoteUpdatedAtRef.current = updatedAt;
-          setData(remoteData);
+          setData(mergeLocalAssets(remoteData, localDataRef.current));
           setSyncStatus("Synchronisé");
           window.setTimeout(() => {
             applyingRemoteRef.current = false;
@@ -129,6 +139,23 @@ export default function App() {
       />
     </AppErrorBoundary>
   );
+}
+
+function mergeLocalAssets(remoteData: AppData, localData: AppData): AppData {
+  const localMembersById = new Map((localData.familyMembers ?? []).map((member) => [member.id, member]));
+  const localShoppingById = new Map((localData.shoppingItems ?? []).map((item) => [item.id, item]));
+
+  return {
+    ...remoteData,
+    familyMembers: (remoteData.familyMembers ?? []).map((member) => ({
+      ...member,
+      photoUrl: member.photoUrl ?? localMembersById.get(member.id)?.photoUrl,
+    })),
+    shoppingItems: (remoteData.shoppingItems ?? []).map((item) => ({
+      ...item,
+      photoUrl: item.photoUrl ?? localShoppingById.get(item.id)?.photoUrl,
+    })),
+  };
 }
 
 class AppErrorBoundary extends Component<{ children: ReactNode }, { error: string | null }> {

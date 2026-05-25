@@ -52,7 +52,7 @@ export default async function handler(request, response) {
         headers: {
           ...supabaseHeaders(),
           "Content-Type": "application/json",
-          Prefer: "resolution=merge-duplicates,return=representation",
+          Prefer: "resolution=merge-duplicates,return=minimal",
         },
         body: JSON.stringify({
           id: APP_STATE_ID,
@@ -67,14 +67,7 @@ export default async function handler(request, response) {
         return;
       }
 
-      let payload = [];
-      try {
-        payload = await supabaseResponse.json();
-      } catch {
-        payload = [];
-      }
-
-      response.status(200).json({ ok: true, updatedAt: payload[0]?.updated_at ?? updatedAt });
+      response.status(200).json({ ok: true, updatedAt });
       return;
     }
 

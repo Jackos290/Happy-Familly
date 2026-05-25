@@ -41,7 +41,7 @@ export async function saveRemoteAppData(data: AppData): Promise<RemoteSaveResult
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ data }),
+      body: JSON.stringify({ data: prepareRemoteData(data) }),
     });
     const payload = await response.json();
 
@@ -59,6 +59,14 @@ export async function saveRemoteAppData(data: AppData): Promise<RemoteSaveResult
       error: error instanceof Error ? error.message : "Erreur réseau inconnue",
     };
   }
+}
+
+function prepareRemoteData(data: AppData): AppData {
+  return {
+    ...data,
+    familyMembers: (data.familyMembers ?? []).map(({ photoUrl: _photoUrl, ...member }) => member),
+    shoppingItems: (data.shoppingItems ?? []).map(({ photoUrl: _photoUrl, ...item }) => item),
+  };
 }
 
 function formatApiError(payload: any) {
