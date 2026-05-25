@@ -29,6 +29,8 @@ export default function TaskBoard({ data, onDataChange, expanded = false, select
   const visibleMembers = selectedMemberId
     ? members.filter((member) => member.id === selectedMemberId)
     : members;
+  const effectiveMemberIndex = members.findIndex((member) => member.id === effectivePersonId);
+  const effectiveMemberIsChild = effectiveMemberIndex >= 2 || effectivePersonId.includes("enfant");
 
   const todoTasks = useMemo(() => filteredTasks.filter((task) => !task.done), [filteredTasks]);
   const doneTasks = useMemo(() => filteredTasks.filter((task) => task.done), [filteredTasks]);
@@ -47,6 +49,10 @@ export default function TaskBoard({ data, onDataChange, expanded = false, select
       setPersonId(members[0]?.id ?? "");
     }
   }, [members, personId, selectedMemberId]);
+
+  useEffect(() => {
+    setRewardMinutes(effectiveMemberIsChild ? 10 : 0);
+  }, [effectiveMemberIsChild, effectivePersonId]);
 
   function addTask(event: FormEvent) {
     event.preventDefault();

@@ -2,6 +2,7 @@ import { Component, useEffect, useRef, useState, type ReactNode } from "react";
 import AccessChooser, { type AccessChoice } from "./components/AccessChooser";
 import Dashboard from "./components/Dashboard";
 import type { AppData } from "./types";
+import { loadGoogleCalendarEvents } from "./utils/googleCalendar";
 import { loadAppData, saveAppData } from "./utils/localStorage";
 import { loadRemoteAppData, saveRemoteAppData } from "./utils/remoteData";
 
@@ -111,6 +112,62 @@ export default function App() {
     }, 60_000);
 
     return () => window.clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    let running = false;
+
+    async function syncGoogleCalendars() {
+      if (running) return;
+
+      const membersWithCalendar = (localDataRef.current.familyMembers ?? []).filter((member) =>
+        member.googleCalendarUrl?.trim(),
+      );
+
+      if (membersWithCalendar.length === 0) return;
+
+      running = true;
+      setSyncStatus("Sync Google...");
+
+      try {
+        const importedEvents = (
+          await Promise.all(
+            membersWithCalendar.map((member) =>
+              loadGoogleCalendarEvents(member.googleCalendarUrl ?? "", member.id),
+            ),
+          )
+        ).flat();
+        const syncedMemberIds = new Set(membersWithCalendar.map((member) => member.id));
+        const currentData = localDataRef.current;
+
+        handleDataChange({
+          ...currentData,
+          calendarEvents: [
+            ...(currentData.calendarEvents ?? []).filter(
+              (event) => !(event.source === "google" && event.personId && syncedMemberIds.has(event.personId)),
+            ),
+            ...importedEvents,
+          ],
+        });
+        setSyncStatus("Google synchronisé");
+      } catch (error) {
+        setSyncStatus(error instanceof Error ? `Erreur Google: ${error.message}` : "Erreur Google Calendar");
+      } finally {
+        running = false;
+      }
+    }
+
+    const firstSync = window.setTimeout(() => {
+      void syncGoogleCalendars();
+    }, 10_000);
+    const interval = window.setInterval(() => {
+      void syncGoogleCalendars();
+    }, 15 * 60_000);
+
+    return () => {
+      window.clearTimeout(firstSync);
+      window.clearInterval(interval);
+    };
   }, []);
 
   function handleDataChange(nextData: AppData) {

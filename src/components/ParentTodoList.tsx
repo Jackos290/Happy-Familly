@@ -17,6 +17,11 @@ export default function ParentTodoList({ data, memberId, onDataChange }: Props) 
     () => (data.parentTodoSections ?? []).filter((section) => section.personId === memberId),
     [data.parentTodoSections, memberId],
   );
+  const doneItems = sections.flatMap((section) =>
+    section.items
+      .filter((item) => item.done)
+      .map((item) => ({ ...item, sectionId: section.id, sectionTitle: section.title })),
+  );
 
   function saveSections(nextSections: ParentTodoSection[]) {
     const others = (data.parentTodoSections ?? []).filter((section) => section.personId !== memberId);
@@ -95,9 +100,15 @@ export default function ParentTodoList({ data, memberId, onDataChange }: Props) 
           <section key={section.id} className="rounded-[1.5rem] bg-white/70 p-4">
             <h3 className="text-lg font-black text-slate-950">{section.title}</h3>
             <div className="mt-3 space-y-2">
-              {section.items.map((item) => (
-                <TodoItem key={item.id} item={item} onToggle={() => toggleItem(section.id, item.id)} />
-              ))}
+              {section.items.filter((item) => !item.done).length === 0 ? (
+                <p className="rounded-2xl bg-white px-4 py-3 font-semibold text-slate-400">Rien à faire ici.</p>
+              ) : (
+                section.items
+                  .filter((item) => !item.done)
+                  .map((item) => (
+                    <TodoItem key={item.id} item={item} onToggle={() => toggleItem(section.id, item.id)} />
+                  ))
+              )}
             </div>
             <div className="mt-3 flex items-center gap-2">
               <input
@@ -112,6 +123,30 @@ export default function ParentTodoList({ data, memberId, onDataChange }: Props) 
             </div>
           </section>
         ))
+      )}
+
+      {doneItems.length > 0 && (
+        <section className="rounded-[1.5rem] bg-slate-950 p-4 text-white">
+          <h3 className="text-lg font-black">Fait</h3>
+          <div className="mt-3 space-y-2">
+            {doneItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => toggleItem(item.sectionId, item.id)}
+                className="flex w-full items-center gap-3 rounded-2xl bg-white/10 px-3 py-3 text-left font-bold"
+                title="Remettre à faire"
+              >
+                <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white">
+                  <Check className="h-4 w-4" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-white line-through">{item.text}</span>
+                  <span className="text-xs text-slate-300">{item.sectionTitle}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
       )}
     </div>
   );
