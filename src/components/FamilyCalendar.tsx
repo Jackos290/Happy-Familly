@@ -16,10 +16,12 @@ type Props = {
 type CalendarView = "month" | "week" | "day";
 
 export default function FamilyCalendar({ data, onDataChange, expanded = false, selectedMemberId = null }: Props) {
+  const members = data.familyMembers ?? [];
+  const calendarEvents = data.calendarEvents ?? [];
   const [title, setTitle] = useState("");
   const [time, setTime] = useState("17:00");
   const [date, setDate] = useState(toDateKey(new Date()));
-  const [personId, setPersonId] = useState(selectedMemberId ?? data.familyMembers[0]?.id ?? "");
+  const [personId, setPersonId] = useState(selectedMemberId ?? members[0]?.id ?? "");
   const [view, setView] = useState<CalendarView>("month");
   const [cursorDate, setCursorDate] = useState(new Date());
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
@@ -29,7 +31,7 @@ export default function FamilyCalendar({ data, onDataChange, expanded = false, s
   const [editPersonId, setEditPersonId] = useState("");
 
   const dashboardEventsByDate = useMemo(() => {
-    const events = uniqueEvents([...getSpecialEventsForDashboard(), ...data.calendarEvents]).filter((event) =>
+    const events = uniqueEvents([...getSpecialEventsForDashboard(), ...calendarEvents]).filter((event) =>
       matchesSelectedMember(event, selectedMemberId),
     );
 
@@ -45,11 +47,11 @@ export default function FamilyCalendar({ data, onDataChange, expanded = false, s
         })
         .sort(compareEvents),
     };
-  }, [data.calendarEvents, selectedMemberId]);
+  }, [calendarEvents, selectedMemberId]);
 
   const range = getViewRange(cursorDate, view);
   const rangeEvents = useMemo(() => {
-    const events = uniqueEvents([...getSpecialEventsForRange(range.start, range.end), ...data.calendarEvents]).filter((event) =>
+    const events = uniqueEvents([...getSpecialEventsForRange(range.start, range.end), ...calendarEvents]).filter((event) =>
       matchesSelectedMember(event, selectedMemberId),
     );
 
@@ -59,29 +61,37 @@ export default function FamilyCalendar({ data, onDataChange, expanded = false, s
         return eventDate >= toDateKey(range.start) && eventDate <= toDateKey(range.end);
       })
       .sort(compareEvents);
-  }, [data.calendarEvents, range.start, range.end, selectedMemberId]);
+  }, [calendarEvents, range.start, range.end, selectedMemberId]);
 
   useEffect(() => {
     if (selectedMemberId) {
       setPersonId(selectedMemberId);
+      return;
     }
-  }, [selectedMemberId]);
+
+    if (!members.some((member) => member.id === personId)) {
+      setPersonId(members[0]?.id ?? "");
+    }
+  }, [members, personId, selectedMemberId]);
 
   function addEvent(event: FormEvent) {
     event.preventDefault();
-    if (!title.trim()) return;
+    const safeDate = normalizeDateKey(date);
+    const safePersonId = selectedMemberId ?? personId ?? members[0]?.id ?? "";
+    if (!title.trim() || !safePersonId) return;
 
     onDataChange({
       ...data,
       calendarEvents: [
-        ...data.calendarEvents,
+        ...calendarEvents,
         {
           id: createId("event"),
           title: title.trim(),
           time,
-          date: date === toDateKey(new Date()) ? "today" : "tomorrow",
-          dateISO: date,
-          personId,
+          date: getRelativeDateLabel(safeDate),
+          dateISO: safeDate,
+          personId: safePersonId,
+          source: "manual",
         },
       ],
     });
@@ -93,24 +103,25 @@ export default function FamilyCalendar({ data, onDataChange, expanded = false, s
     setEditTitle(event.title);
     setEditDate(getEventDateKey(event));
     setEditTime(event.time === "Toute la journée" ? "08:00" : event.time);
-    setEditPersonId(event.personId ?? data.familyMembers[0]?.id ?? "");
+    setEditPersonId(event.personId ?? members[0]?.id ?? "");
   }
 
   function saveSelectedEvent(event: FormEvent) {
     event.preventDefault();
     if (!selectedEvent || !isEditableEvent(selectedEvent, data)) return;
 
+    const safeEditDate = normalizeDateKey(editDate);
     onDataChange({
       ...data,
-      calendarEvents: data.calendarEvents.map((item) =>
+      calendarEvents: calendarEvents.map((item) =>
         item.id === selectedEvent.id
           ? {
               ...item,
               title: editTitle.trim() || item.title,
-              date: editDate === toDateKey(new Date()) ? "today" : "tomorrow",
-              dateISO: editDate,
+              date: getRelativeDateLabel(safeEditDate),
+              dateISO: safeEditDate,
               time: editTime,
-              personId: editPersonId,
+              personId: editPersonId || item.personId,
             }
           : item,
       ),
@@ -123,7 +134,7 @@ export default function FamilyCalendar({ data, onDataChange, expanded = false, s
 
     onDataChange({
       ...data,
-      calendarEvents: data.calendarEvents.filter((item) => item.id !== selectedEvent.id),
+      calendarEvents: calendarEvents.filter((item) => item.id !== selectedEvent.id),
     });
     setSelectedEvent(null);
   }
@@ -533,13 +544,15 @@ function MemberSelect({
   value: string;
   onChange: (value: string) => void;
 }) {
-  const member = data.familyMembers.find((item) => item.id === value);
+  const members = data.familyMembers ?? [];
+  const selectedValue = members.some((item) => item.id === value) ? value : members[0]?.id ?? "";
+  const member = members.find((item) => item.id === selectedValue);
 
   return (
     <div className="flex min-w-0 flex-[1_1_160px] items-center gap-2">
       <MemberBadge member={member} size="sm" />
-      <select className="field min-h-11 flex-1" value={value} onChange={(event) => onChange(event.target.value)}>
-        {data.familyMembers.map((item) => (
+      <select className="field min-h-11 flex-1" value={selectedValue} onChange={(event) => onChange(event.target.value)}>
+        {members.map((item) => (
           <option key={item.id} value={item.id}>{item.name}</option>
         ))}
       </select>
@@ -594,7 +607,7 @@ function isEditableEvent(event: CalendarEvent, data: AppData) {
 }
 
 function getEventDateKey(event: CalendarEvent) {
-  if (event.dateISO) return event.dateISO;
+  if (event.dateISO) return normalizeDateKey(event.dateISO);
   const date = new Date();
   if (event.date === "tomorrow") date.setDate(date.getDate() + 1);
   return toDateKey(date);
@@ -653,13 +666,31 @@ function formatRangeTitle(date: Date, view: CalendarView) {
 }
 
 function formatDateLabel(dateKey: string) {
-  return new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" }).format(new Date(`${dateKey}T12:00:00`));
+  return new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" }).format(new Date(`${normalizeDateKey(dateKey)}T12:00:00`));
 }
 
 function toDateKey(date: Date) {
+  if (Number.isNaN(date.getTime())) {
+    const today = new Date();
+    return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  }
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
 function atNoon(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12);
+}
+
+function normalizeDateKey(value: string | undefined) {
+  if (value && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const date = new Date(`${value}T12:00:00`);
+    if (!Number.isNaN(date.getTime())) return value;
+  }
+
+  return toDateKey(new Date());
+}
+
+function getRelativeDateLabel(dateKey: string): CalendarEvent["date"] {
+  const today = toDateKey(new Date());
+  return dateKey === today ? "today" : "tomorrow";
 }

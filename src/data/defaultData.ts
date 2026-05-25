@@ -65,4 +65,14 @@ export const defaultData: AppData = {
       { id: "expense-3", label: "Transport", amount: 180 },
     ],
   },
+  parentTodoSections: [
+    {
+      id: "parent-section-1",
+      title: "Maison",
+      personId: "papa",
+      items: [
+        { id: "parent-todo-1", text: "Vérifier les papiers école", done: false },
+      ],
+    },
+  ],
 };

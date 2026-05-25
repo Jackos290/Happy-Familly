@@ -4,12 +4,11 @@
   Expand,
   Heart,
   Home,
-  Maximize2,
+  ListTodo,
   PiggyBank,
   Quote,
   RefreshCw,
   Settings,
-  ShieldCheck,
   ShoppingBasket,
   SunMedium,
   X,
@@ -22,6 +21,8 @@ import BudgetCard from "./BudgetCard";
 import DailyThanks from "./DailyThanks";
 import FamilyCalendar from "./FamilyCalendar";
 import FamilySettings from "./FamilySettings";
+import GoogleCalendarSync from "./GoogleCalendarSync";
+import ParentTodoList from "./ParentTodoList";
 import PositiveQuote from "./PositiveQuote";
 import ShoppingList from "./ShoppingList";
 import TaskBoard from "./TaskBoard";
@@ -38,7 +39,7 @@ type DashboardProps = {
 };
 
 type PanelId = "calendar" | "tasks" | "weather" | "shopping" | "budget" | "quote" | "thanks";
-type PersonalTab = "home" | "calendar" | "tasks" | "shopping" | "budget" | "weather" | "thanks";
+type PersonalTab = "home" | "calendar" | "tasks" | "todo" | "shopping" | "budget" | "weather" | "thanks";
 
 type WakeLockSentinelLike = {
   release: () => Promise<void>;
@@ -270,10 +271,10 @@ export default function Dashboard({
             </span>
             <button
               onClick={toggleTabletMode}
-              className="inline-flex min-h-12 items-center gap-2 rounded-full bg-slate-950 px-5 text-sm font-bold text-white transition hover:bg-slate-700"
+              className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-slate-950 text-xl text-white transition hover:bg-slate-700"
+              title={tabletModeActive ? "Quitter le mode tablette" : "Mode tablette"}
             >
-              {tabletModeActive ? <ShieldCheck className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-              {tabletModeActive ? "Quitter tablette" : "Mode tablette"}
+              {tabletModeActive ? "✅" : "📱"}
             </button>
           </div>
         </header>
@@ -399,6 +400,7 @@ function PersonalApp({
           <PersonalNavButton active={tab === "home"} icon={<Home />} label="Accueil" onClick={() => onTabChange("home")} />
           <PersonalNavButton active={tab === "calendar"} icon={<CalendarDays />} label="Agenda" onClick={() => onTabChange("calendar")} />
           <PersonalNavButton active={tab === "tasks"} icon={<CheckSquare />} label="Tâches" onClick={() => onTabChange("tasks")} />
+          {!isChild && <PersonalNavButton active={tab === "todo"} icon={<ListTodo />} label="Todo" onClick={() => onTabChange("todo")} />}
           <PersonalNavButton active={tab === "shopping"} icon={<ShoppingBasket />} label="Courses" onClick={() => onTabChange("shopping")} />
           <PersonalNavButton active={tab === "budget"} icon={<PiggyBank />} label={isChild ? "Temps" : "Budget"} onClick={() => onTabChange("budget")} />
           <PersonalNavButton active={tab === "weather"} icon={<SunMedium />} label="Météo" onClick={() => onTabChange("weather")} />
@@ -444,9 +446,16 @@ function renderPersonalTab(
 ) {
   switch (tab) {
     case "calendar":
-      return <FamilyCalendar data={data} onDataChange={onDataChange} selectedMemberId={memberId} expanded />;
+      return (
+        <div className="space-y-4">
+          {!isChild && <GoogleCalendarSync data={data} memberId={memberId} onDataChange={onDataChange} />}
+          <FamilyCalendar data={data} onDataChange={onDataChange} selectedMemberId={memberId} expanded />
+        </div>
+      );
     case "tasks":
       return <TaskBoard data={data} onDataChange={onDataChange} selectedMemberId={memberId} expanded />;
+    case "todo":
+      return <ParentTodoList data={data} memberId={memberId} onDataChange={onDataChange} />;
     case "shopping":
       return <ShoppingList data={data} onDataChange={onDataChange} expanded />;
     case "budget":
@@ -475,6 +484,12 @@ function renderPersonalTab(
               <h2 className="mb-3 text-lg font-black">{isChild ? "Mon temps gagné" : "Budget famille"}</h2>
               {isChild ? <RewardCounter data={data} memberId={memberId} /> : <BudgetCard data={data} onDataChange={onDataChange} />}
             </div>
+            {!isChild && (
+              <div className="rounded-[1.5rem] bg-white/65 p-4">
+                <h2 className="mb-3 text-lg font-black">Ma todo-list</h2>
+                <ParentTodoList data={data} memberId={memberId} onDataChange={onDataChange} />
+              </div>
+            )}
           </div>
         </div>
       );

@@ -3,6 +3,7 @@ export type FamilyMember = {
   name: string;
   color: string;
   photoUrl?: string;
+  googleCalendarUrl?: string;
 };
 
 export type CalendarEvent = {
@@ -12,6 +13,8 @@ export type CalendarEvent = {
   dateISO?: string;
   time: string;
   personId?: string;
+  source?: "manual" | "google";
+  externalId?: string;
 };
 
 export type Task = {
@@ -57,6 +60,19 @@ export type FamilyBudget = {
   expenses: Expense[];
 };
 
+export type ParentTodoItem = {
+  id: string;
+  text: string;
+  done: boolean;
+};
+
+export type ParentTodoSection = {
+  id: string;
+  title: string;
+  personId: string;
+  items: ParentTodoItem[];
+};
+
 export type AppData = {
   familyMembers: FamilyMember[];
   calendarEvents: CalendarEvent[];
@@ -66,4 +82,5 @@ export type AppData = {
   positiveQuote: string;
   thanksMessages: ThanksMessage[];
   budget: FamilyBudget;
+  parentTodoSections?: ParentTodoSection[];
 };
