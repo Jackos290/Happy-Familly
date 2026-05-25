@@ -190,16 +190,16 @@ function TaskForm({
   onSubmit: (event: FormEvent) => void;
 }) {
   return (
-    <form onSubmit={onSubmit} className="grid grid-cols-1 gap-3 rounded-3xl bg-white/50 p-3 xl:grid-cols-[minmax(0,1fr)_minmax(150px,180px)_minmax(130px,150px)_90px_56px]">
+    <form onSubmit={onSubmit} className="flex flex-wrap items-center gap-3 rounded-3xl bg-white/50 p-3">
       <input
-        className="field"
+        className="field min-w-0 flex-[1_1_220px]"
         value={title}
         onChange={(event) => onTitleChange(event.target.value)}
         placeholder="Nouvelle tâche"
       />
       <MemberSelect data={data} value={personId} onChange={onPersonChange} />
       <select
-        className="field"
+        className="field min-w-32 flex-[1_1_140px]"
         value={recurrence}
         onChange={(event) => onRecurrenceChange(event.target.value as Task["recurrence"])}
       >
@@ -208,7 +208,7 @@ function TaskForm({
         <option value="weekly">Chaque semaine</option>
       </select>
       <input
-        className="field"
+        className="field w-24 shrink-0"
         type="number"
         min="0"
         step="5"
@@ -216,7 +216,7 @@ function TaskForm({
         onChange={(event) => onRewardMinutesChange(Number(event.target.value))}
         title="Minutes gagnées"
       />
-      <button className="icon-button justify-self-end" title="Ajouter la tâche">
+      <button className="icon-button shrink-0" title="Ajouter la tâche">
         <Plus className="h-5 w-5" />
       </button>
     </form>
@@ -307,7 +307,7 @@ function MemberSelect({
   const member = data.familyMembers.find((item) => item.id === value);
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex min-w-0 flex-[1_1_160px] items-center gap-2">
       <MemberBadge member={member} size="sm" />
       <select className="field min-h-11 flex-1" value={value} onChange={(event) => onChange(event.target.value)}>
         {data.familyMembers.map((item) => (

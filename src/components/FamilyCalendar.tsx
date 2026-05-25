@@ -257,12 +257,12 @@ function CalendarForm({
   onPersonChange: (value: string) => void;
 }) {
   return (
-    <form onSubmit={onSubmit} className="grid grid-cols-1 gap-3 rounded-3xl bg-white/50 p-3 xl:grid-cols-[minmax(0,1fr)_150px_120px_minmax(150px,180px)_56px]">
-      <input className="field" value={title} onChange={(event) => onTitleChange(event.target.value)} placeholder="Ajouter un événement ou rendez-vous" />
-      <input className="field" type="date" value={date} onChange={(event) => onDateChange(event.target.value)} />
-      <input className="field" type="time" value={time} onChange={(event) => onTimeChange(event.target.value)} />
+    <form onSubmit={onSubmit} className="flex flex-wrap items-center gap-3 rounded-3xl bg-white/50 p-3">
+      <input className="field min-w-0 flex-[1_1_260px]" value={title} onChange={(event) => onTitleChange(event.target.value)} placeholder="Ajouter un événement ou rendez-vous" />
+      <input className="field min-w-36 flex-[1_1_150px]" type="date" value={date} onChange={(event) => onDateChange(event.target.value)} />
+      <input className="field min-w-32 flex-[1_1_130px]" type="time" value={time} onChange={(event) => onTimeChange(event.target.value)} />
       <MemberSelect data={data} value={personId} onChange={onPersonChange} />
-      <button className="icon-button justify-self-end" title="Ajouter l'événement">
+      <button className="icon-button shrink-0" title="Ajouter l'événement">
         <Plus className="h-5 w-5" />
       </button>
     </form>
@@ -536,7 +536,7 @@ function MemberSelect({
   const member = data.familyMembers.find((item) => item.id === value);
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex min-w-0 flex-[1_1_160px] items-center gap-2">
       <MemberBadge member={member} size="sm" />
       <select className="field min-h-11 flex-1" value={value} onChange={(event) => onChange(event.target.value)}>
         {data.familyMembers.map((item) => (

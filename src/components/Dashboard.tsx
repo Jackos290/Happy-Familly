@@ -3,6 +3,7 @@
   CheckSquare,
   Expand,
   Heart,
+  Home,
   Maximize2,
   PiggyBank,
   Quote,
@@ -31,6 +32,9 @@ type DashboardProps = {
   onDataChange: (data: AppData) => void;
   refreshKey: number;
   syncStatus: string;
+  accessMode?: "dashboard" | "member";
+  initialMemberId?: string | null;
+  onBackToChooser?: () => void;
 };
 
 type PanelId = "calendar" | "tasks" | "weather" | "shopping" | "budget" | "quote" | "thanks";
@@ -46,14 +50,22 @@ type WakeLockNavigator = Navigator & {
   };
 };
 
-export default function Dashboard({ data, onDataChange, refreshKey, syncStatus }: DashboardProps) {
+export default function Dashboard({
+  data,
+  onDataChange,
+  refreshKey,
+  syncStatus,
+  accessMode = "dashboard",
+  initialMemberId = null,
+  onBackToChooser,
+}: DashboardProps) {
   const wakeLockRef = useRef<WakeLockSentinelLike | null>(null);
   const [tabletModeActive, setTabletModeActive] = useState(false);
   const [tabletModeMessage, setTabletModeMessage] = useState("Prêt pour la tablette");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [expandedPanel, setExpandedPanel] = useState<PanelId | null>(null);
   const [nextHours, setNextHours] = useState<HourlyForecast[]>([]);
-  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(initialMemberId);
 
   const selectedMemberIsChild = data.familyMembers.some(
     (member) => member.id === selectedMemberId && isChildMember(member.name, member.id),
@@ -83,11 +95,22 @@ export default function Dashboard({ data, onDataChange, refreshKey, syncStatus }
     }
   }
 
-  async function activateTabletMode() {
-    if (!document.fullscreenElement) {
-      await document.documentElement.requestFullscreen().catch(() => undefined);
+  async function releaseWakeLock() {
+    const currentWakeLock = wakeLockRef.current;
+    wakeLockRef.current = null;
+    await currentWakeLock?.release().catch(() => undefined);
+  }
+
+  async function toggleTabletMode() {
+    if (document.fullscreenElement) {
+      await document.exitFullscreen().catch(() => undefined);
+      await releaseWakeLock();
+      setTabletModeActive(false);
+      setTabletModeMessage("Mode tablette désactivé");
+      return;
     }
 
+    await document.documentElement.requestFullscreen().catch(() => undefined);
     setTabletModeActive(true);
     await requestWakeLock();
   }
@@ -103,9 +126,26 @@ export default function Dashboard({ data, onDataChange, refreshKey, syncStatus }
 
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-      void wakeLockRef.current?.release();
+      void releaseWakeLock();
     };
   }, [tabletModeActive]);
+
+  useEffect(() => {
+    function handleFullscreenChange() {
+      const fullscreenActive = Boolean(document.fullscreenElement);
+      setTabletModeActive(fullscreenActive);
+      if (!fullscreenActive) {
+        void releaseWakeLock();
+        setTabletModeMessage("Mode tablette désactivé");
+      }
+    }
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    };
+  }, []);
 
   useEffect(() => {
     async function loadHeaderForecast() {
@@ -121,6 +161,11 @@ export default function Dashboard({ data, onDataChange, refreshKey, syncStatus }
   }, [refreshKey]);
 
   useEffect(() => {
+    setSelectedMemberId(initialMemberId);
+  }, [initialMemberId]);
+
+  useEffect(() => {
+    if (accessMode === "member") return;
     if (!selectedMemberId) return;
 
     let timeout = window.setTimeout(() => {
@@ -142,7 +187,12 @@ export default function Dashboard({ data, onDataChange, refreshKey, syncStatus }
       window.removeEventListener("pointerdown", resetFilterTimeout);
       window.removeEventListener("keydown", resetFilterTimeout);
     };
-  }, [selectedMemberId]);
+  }, [accessMode, selectedMemberId]);
+
+  const selectedMember = selectedMemberId
+    ? data.familyMembers.find((member) => member.id === selectedMemberId)
+    : null;
+  const headerMembers = accessMode === "member" && selectedMember ? [selectedMember] : data.familyMembers;
 
   return (
     <main className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,#e0f2fe_0,#f8fafc_34%,#fff7ed_72%,#f8fafc_100%)] px-4 py-4 text-slate-900 sm:px-6 lg:px-8">
@@ -157,14 +207,22 @@ export default function Dashboard({ data, onDataChange, refreshKey, syncStatus }
             )}
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            {data.familyMembers.map((member) => (
+            {onBackToChooser && (
+              <button onClick={onBackToChooser} className="icon-button" title="Changer d'espace">
+                <Home className="h-5 w-5" />
+              </button>
+            )}
+            {headerMembers.map((member) => (
               <button
                 key={member.id}
-                onClick={() => setSelectedMemberId((current) => (current === member.id ? null : member.id))}
+                onClick={() => {
+                  if (accessMode === "member") return;
+                  setSelectedMemberId((current) => (current === member.id ? null : member.id));
+                }}
                 className={`inline-flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-white shadow-sm ring-offset-2 transition ${
                   selectedMemberId === member.id ? "ring-4 ring-slate-950" : "ring-0 hover:ring-2 hover:ring-slate-200"
                 }`}
-                title={`Voir seulement ${member.name}`}
+                title={accessMode === "member" ? member.name : `Voir seulement ${member.name}`}
               >
                 {member.photoUrl ? (
                   <img src={member.photoUrl} alt={member.name} className="h-full w-full object-cover" />
@@ -187,11 +245,11 @@ export default function Dashboard({ data, onDataChange, refreshKey, syncStatus }
               {syncStatus}
             </span>
             <button
-              onClick={activateTabletMode}
+              onClick={toggleTabletMode}
               className="inline-flex min-h-12 items-center gap-2 rounded-full bg-slate-950 px-5 text-sm font-bold text-white transition hover:bg-slate-700"
             >
               {tabletModeActive ? <ShieldCheck className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-              Mode tablette
+              {tabletModeActive ? "Quitter tablette" : "Mode tablette"}
             </button>
           </div>
         </header>

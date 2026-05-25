@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import AccessChooser, { type AccessChoice } from "./components/AccessChooser";
 import Dashboard from "./components/Dashboard";
 import type { AppData } from "./types";
 import { loadAppData, saveAppData } from "./utils/localStorage";
@@ -11,6 +12,7 @@ export default function App() {
   const remoteReadyRef = useRef(false);
   const applyingRemoteRef = useRef(false);
   const pendingLocalSaveRef = useRef(false);
+  const [accessChoice, setAccessChoice] = useState<AccessChoice | null>(null);
 
   useEffect(() => {
     saveAppData(data);
@@ -87,12 +89,19 @@ export default function App() {
     setData(nextData);
   }
 
+  if (!accessChoice) {
+    return <AccessChooser data={data} onChoose={setAccessChoice} syncStatus={syncStatus} />;
+  }
+
   return (
     <Dashboard
       data={data}
       onDataChange={handleDataChange}
       refreshKey={refreshKey}
       syncStatus={syncStatus}
+      accessMode={accessChoice.type}
+      initialMemberId={accessChoice.type === "member" ? accessChoice.memberId : null}
+      onBackToChooser={() => setAccessChoice(null)}
     />
   );
 }
