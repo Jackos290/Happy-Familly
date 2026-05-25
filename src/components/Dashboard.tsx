@@ -362,7 +362,7 @@ function PersonalApp({
   const isChild = isChildMember(data, memberId);
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,#e0f2fe_0,#f8fafc_38%,#fff7ed_100%)] pb-28 text-slate-900">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,#e0f2fe_0,#f8fafc_38%,#fff7ed_100%)] pb-36 text-slate-900">
       <div className="mx-auto flex max-w-3xl flex-col gap-4 px-4 py-4">
         <header className="sticky top-3 z-30 rounded-[1.5rem] border border-white/70 bg-white/80 p-3 shadow-glass backdrop-blur-2xl">
           <div className="flex items-center gap-3">
@@ -395,8 +395,8 @@ function PersonalApp({
         </section>
       </div>
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/70 bg-white/90 px-3 py-2 shadow-glass backdrop-blur-2xl">
-        <div className="mx-auto flex max-w-3xl gap-2 overflow-x-auto">
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/70 bg-white/90 px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 shadow-glass backdrop-blur-2xl">
+        <div className="mx-auto grid max-w-3xl grid-cols-4 gap-1.5">
           <PersonalNavButton active={tab === "home"} icon={<Home />} label="Accueil" onClick={() => onTabChange("home")} />
           <PersonalNavButton active={tab === "calendar"} icon={<CalendarDays />} label="Agenda" onClick={() => onTabChange("calendar")} />
           <PersonalNavButton active={tab === "tasks"} icon={<CheckSquare />} label="Tâches" onClick={() => onTabChange("tasks")} />
@@ -427,7 +427,7 @@ function PersonalNavButton({
   return (
     <button
       onClick={onClick}
-      className={`flex min-w-20 flex-col items-center justify-center gap-1 rounded-2xl px-3 py-2 text-xs font-black transition [&_svg]:h-5 [&_svg]:w-5 ${
+      className={`flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-2xl px-1.5 py-1.5 text-[0.68rem] font-black transition [&_svg]:h-5 [&_svg]:w-5 ${
         active ? "bg-slate-950 text-white" : "bg-white/70 text-slate-600"
       }`}
     >
