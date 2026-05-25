@@ -18,14 +18,17 @@ export default function TaskBoard({ data, onDataChange, expanded = false, select
   const [recurrence, setRecurrence] = useState<Task["recurrence"]>("none");
   const [rewardMinutes, setRewardMinutes] = useState(10);
   const [tab, setTab] = useState<"todo" | "done" | "recurring">("todo");
+  const members = data.familyMembers ?? [];
+  const tasks = data.tasks ?? [];
+  const effectivePersonId = selectedMemberId ?? personId ?? members[0]?.id ?? "";
 
   const filteredTasks = useMemo(
-    () => data.tasks.filter((task) => !selectedMemberId || task.personId === selectedMemberId),
-    [data.tasks, selectedMemberId],
+    () => tasks.filter((task) => !selectedMemberId || task.personId === selectedMemberId),
+    [tasks, selectedMemberId],
   );
   const visibleMembers = selectedMemberId
-    ? data.familyMembers.filter((member) => member.id === selectedMemberId)
-    : data.familyMembers;
+    ? members.filter((member) => member.id === selectedMemberId)
+    : members;
 
   const todoTasks = useMemo(() => filteredTasks.filter((task) => !task.done), [filteredTasks]);
   const doneTasks = useMemo(() => filteredTasks.filter((task) => task.done), [filteredTasks]);
@@ -37,24 +40,29 @@ export default function TaskBoard({ data, onDataChange, expanded = false, select
   useEffect(() => {
     if (selectedMemberId) {
       setPersonId(selectedMemberId);
+      return;
     }
-  }, [selectedMemberId]);
+
+    if (!members.some((member) => member.id === personId)) {
+      setPersonId(members[0]?.id ?? "");
+    }
+  }, [members, personId, selectedMemberId]);
 
   function addTask(event: FormEvent) {
     event.preventDefault();
-    if (!title.trim()) return;
+    if (!title.trim() || !effectivePersonId) return;
 
     onDataChange({
       ...data,
       tasks: [
-        ...data.tasks,
+        ...tasks,
         {
           id: createId("task"),
           title: title.trim(),
-          personId,
+          personId: effectivePersonId,
           done: false,
           recurrence,
-          rewardMinutes,
+          rewardMinutes: Number.isFinite(rewardMinutes) ? rewardMinutes : 0,
         },
       ],
     });
@@ -64,14 +72,14 @@ export default function TaskBoard({ data, onDataChange, expanded = false, select
   function updateTask(taskId: string, changes: Partial<Task>) {
     onDataChange({
       ...data,
-      tasks: data.tasks.map((task) => (task.id === taskId ? { ...task, ...changes } : task)),
+      tasks: tasks.map((task) => (task.id === taskId ? { ...task, ...changes } : task)),
     });
   }
 
   function toggleTask(taskId: string) {
     onDataChange({
       ...data,
-      tasks: data.tasks.map((task) =>
+      tasks: tasks.map((task) =>
         task.id === taskId
           ? {
               ...task,
@@ -93,7 +101,7 @@ export default function TaskBoard({ data, onDataChange, expanded = false, select
       <div className="space-y-4">
         <div className="grid gap-3 sm:grid-cols-2">
           {visibleMembers.map((member) => {
-            const memberTasks = data.tasks.filter((task) => task.personId === member.id && !task.done);
+            const memberTasks = tasks.filter((task) => task.personId === member.id && !task.done);
             return (
               <div key={member.id} className="rounded-3xl bg-white/50 p-3">
                 <MemberBadge member={member} className="mb-3" />
@@ -110,7 +118,7 @@ export default function TaskBoard({ data, onDataChange, expanded = false, select
         </div>
         <TaskForm
           title={title}
-          personId={personId}
+          personId={effectivePersonId}
           recurrence={recurrence}
           rewardMinutes={rewardMinutes}
           data={data}
@@ -142,7 +150,7 @@ export default function TaskBoard({ data, onDataChange, expanded = false, select
 
       <TaskForm
         title={title}
-        personId={personId}
+        personId={effectivePersonId}
         recurrence={recurrence}
         rewardMinutes={rewardMinutes}
         data={data}
@@ -304,13 +312,15 @@ function MemberSelect({
   value: string;
   onChange: (value: string) => void;
 }) {
-  const member = data.familyMembers.find((item) => item.id === value);
+  const members = data.familyMembers ?? [];
+  const selectedValue = members.some((item) => item.id === value) ? value : members[0]?.id ?? "";
+  const member = members.find((item) => item.id === selectedValue);
 
   return (
     <div className="flex min-w-0 flex-[1_1_160px] items-center gap-2">
       <MemberBadge member={member} size="sm" />
-      <select className="field min-h-11 flex-1" value={value} onChange={(event) => onChange(event.target.value)}>
-        {data.familyMembers.map((item) => (
+      <select className="field min-h-11 flex-1" value={selectedValue} onChange={(event) => onChange(event.target.value)}>
+        {members.map((item) => (
           <option key={item.id} value={item.id}>
             {item.name}
           </option>

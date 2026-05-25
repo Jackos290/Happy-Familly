@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { Component, useEffect, useRef, useState, type ReactNode } from "react";
 import AccessChooser, { type AccessChoice } from "./components/AccessChooser";
 import Dashboard from "./components/Dashboard";
 import type { AppData } from "./types";
@@ -90,18 +90,54 @@ export default function App() {
   }
 
   if (!accessChoice) {
-    return <AccessChooser data={data} onChoose={setAccessChoice} syncStatus={syncStatus} />;
+    return (
+      <AppErrorBoundary>
+        <AccessChooser data={data} onChoose={setAccessChoice} syncStatus={syncStatus} />
+      </AppErrorBoundary>
+    );
   }
 
   return (
-    <Dashboard
-      data={data}
-      onDataChange={handleDataChange}
-      refreshKey={refreshKey}
-      syncStatus={syncStatus}
-      accessMode={accessChoice.type}
-      initialMemberId={accessChoice.type === "member" ? accessChoice.memberId : null}
-      onBackToChooser={() => setAccessChoice(null)}
-    />
+    <AppErrorBoundary>
+      <Dashboard
+        data={data}
+        onDataChange={handleDataChange}
+        refreshKey={refreshKey}
+        syncStatus={syncStatus}
+        accessMode={accessChoice.type}
+        initialMemberId={accessChoice.type === "member" ? accessChoice.memberId : null}
+        onBackToChooser={() => setAccessChoice(null)}
+      />
+    </AppErrorBoundary>
   );
+}
+
+class AppErrorBoundary extends Component<{ children: ReactNode }, { error: string | null }> {
+  state: { error: string | null } = { error: null };
+
+  static getDerivedStateFromError(error: unknown) {
+    return { error: error instanceof Error ? error.message : "Erreur inconnue" };
+  }
+
+  render() {
+    if (this.state.error) {
+      return (
+        <main className="flex min-h-screen items-center justify-center bg-slate-50 p-6 text-slate-950">
+          <section className="max-w-lg rounded-[2rem] bg-white p-6 shadow-glass">
+            <p className="text-sm font-black uppercase tracking-[0.16em] text-rose-600">Erreur affichage</p>
+            <h1 className="mt-2 text-2xl font-black">L'application a évité l'écran blanc.</h1>
+            <p className="mt-3 font-semibold text-slate-600">{this.state.error}</p>
+            <button
+              className="mt-5 rounded-2xl bg-slate-950 px-5 py-3 font-bold text-white"
+              onClick={() => window.location.reload()}
+            >
+              Recharger
+            </button>
+          </section>
+        </main>
+      );
+    }
+
+    return this.props.children;
+  }
 }

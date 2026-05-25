@@ -69,9 +69,7 @@ export default function Dashboard({
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(initialMemberId);
   const [personalTab, setPersonalTab] = useState<PersonalTab>("home");
 
-  const selectedMemberIsChild = data.familyMembers.some(
-    (member) => member.id === selectedMemberId && isChildMember(member.name, member.id),
-  );
+  const selectedMemberIsChild = Boolean(selectedMemberId && isChildMember(data, selectedMemberId));
 
   const now = new Intl.DateTimeFormat("fr-FR", {
     weekday: "long",
@@ -360,7 +358,7 @@ function PersonalApp({
   onOpenSettings: () => void;
   children?: ReactNode;
 }) {
-  const isChild = isChildMember(memberName, memberId);
+  const isChild = isChildMember(data, memberId);
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,#e0f2fe_0,#f8fafc_38%,#fff7ed_100%)] pb-28 text-slate-900">
@@ -516,9 +514,18 @@ function RewardCounter({ data, memberId }: { data: AppData; memberId: string }) 
   );
 }
 
-function isChildMember(name: string, id: string) {
-  const value = `${id} ${name}`.toLowerCase();
-  return value.includes("enfant") || (!value.includes("papa") && !value.includes("maman"));
+function isChildMember(data: AppData, memberId: string) {
+  const memberIndex = data.familyMembers.findIndex((member) => member.id === memberId);
+  if (memberIndex >= 0) {
+    const member = data.familyMembers[memberIndex];
+    const value = `${member.id} ${member.name}`.toLowerCase();
+    if (value.includes("papa") || value.includes("maman") || value.includes("parent")) return false;
+    if (value.includes("enfant")) return true;
+    return memberIndex >= 2;
+  }
+
+  const value = memberId.toLowerCase();
+  return value.includes("enfant");
 }
 
 function Panel({
@@ -616,7 +623,7 @@ function renderExpandedPanel(
     case "budget":
       if (selectedMemberId) {
         const member = data.familyMembers.find((item) => item.id === selectedMemberId);
-        if (member && isChildMember(member.name, member.id)) {
+        if (member && isChildMember(data, member.id)) {
           return <RewardCounter data={data} memberId={selectedMemberId} />;
         }
       }
