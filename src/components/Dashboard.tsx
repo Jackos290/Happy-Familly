@@ -38,6 +38,7 @@ type DashboardProps = {
 };
 
 type PanelId = "calendar" | "tasks" | "weather" | "shopping" | "budget" | "quote" | "thanks";
+type PersonalTab = "home" | "calendar" | "tasks" | "shopping" | "budget" | "weather" | "thanks";
 
 type WakeLockSentinelLike = {
   release: () => Promise<void>;
@@ -66,6 +67,7 @@ export default function Dashboard({
   const [expandedPanel, setExpandedPanel] = useState<PanelId | null>(null);
   const [nextHours, setNextHours] = useState<HourlyForecast[]>([]);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(initialMemberId);
+  const [personalTab, setPersonalTab] = useState<PersonalTab>("home");
 
   const selectedMemberIsChild = data.familyMembers.some(
     (member) => member.id === selectedMemberId && isChildMember(member.name, member.id),
@@ -194,6 +196,30 @@ export default function Dashboard({
     : null;
   const headerMembers = accessMode === "member" && selectedMember ? [selectedMember] : data.familyMembers;
 
+  if (accessMode === "member" && selectedMember) {
+    return (
+      <PersonalApp
+        data={data}
+        onDataChange={onDataChange}
+        syncStatus={syncStatus}
+        memberId={selectedMember.id}
+        memberName={selectedMember.name}
+        memberPhotoUrl={selectedMember.photoUrl}
+        memberColor={selectedMember.color}
+        tab={personalTab}
+        onTabChange={setPersonalTab}
+        onBackToChooser={onBackToChooser}
+        onOpenSettings={() => setSettingsOpen(true)}
+      >
+        {settingsOpen && (
+          <Modal title="Options famille" onClose={() => setSettingsOpen(false)}>
+            <FamilySettings data={data} onDataChange={onDataChange} />
+          </Modal>
+        )}
+      </PersonalApp>
+    );
+  }
+
   return (
     <main className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,#e0f2fe_0,#f8fafc_34%,#fff7ed_72%,#f8fafc_100%)] px-4 py-4 text-slate-900 sm:px-6 lg:px-8">
       <div className="mx-auto flex max-w-[1500px] flex-col gap-5">
@@ -305,6 +331,156 @@ export default function Dashboard({
       )}
     </main>
   );
+}
+
+function PersonalApp({
+  data,
+  onDataChange,
+  syncStatus,
+  memberId,
+  memberName,
+  memberPhotoUrl,
+  memberColor,
+  tab,
+  onTabChange,
+  onBackToChooser,
+  onOpenSettings,
+  children,
+}: {
+  data: AppData;
+  onDataChange: (data: AppData) => void;
+  syncStatus: string;
+  memberId: string;
+  memberName: string;
+  memberPhotoUrl?: string;
+  memberColor: string;
+  tab: PersonalTab;
+  onTabChange: (tab: PersonalTab) => void;
+  onBackToChooser?: () => void;
+  onOpenSettings: () => void;
+  children?: ReactNode;
+}) {
+  const isChild = isChildMember(memberName, memberId);
+
+  return (
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,#e0f2fe_0,#f8fafc_38%,#fff7ed_100%)] pb-28 text-slate-900">
+      <div className="mx-auto flex max-w-3xl flex-col gap-4 px-4 py-4">
+        <header className="sticky top-3 z-30 rounded-[1.5rem] border border-white/70 bg-white/80 p-3 shadow-glass backdrop-blur-2xl">
+          <div className="flex items-center gap-3">
+            <button onClick={onBackToChooser} className="icon-button h-11 w-11" title="Changer d'espace">
+              <Home className="h-5 w-5" />
+            </button>
+            <div className="flex min-w-0 flex-1 items-center gap-3">
+              <span className="inline-flex h-12 w-12 shrink-0 overflow-hidden rounded-full bg-white shadow-sm">
+                {memberPhotoUrl ? (
+                  <img src={memberPhotoUrl} alt={memberName} className="h-full w-full object-cover" />
+                ) : (
+                  <span className={`flex h-full w-full items-center justify-center text-sm font-black ${memberColor}`}>
+                    {memberName.slice(0, 1).toUpperCase()}
+                  </span>
+                )}
+              </span>
+              <div className="min-w-0">
+                <p className="truncate text-xl font-black text-slate-950">{memberName}</p>
+                <p className="truncate text-xs font-bold text-slate-500">{syncStatus}</p>
+              </div>
+            </div>
+            <button onClick={onOpenSettings} className="icon-button h-11 w-11" title="Options famille">
+              <Settings className="h-5 w-5" />
+            </button>
+          </div>
+        </header>
+
+        <section className="rounded-[1.75rem] border border-white/70 bg-white/65 p-4 shadow-glass backdrop-blur-2xl">
+          {renderPersonalTab(tab, data, onDataChange, memberId, isChild)}
+        </section>
+      </div>
+
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/70 bg-white/90 px-3 py-2 shadow-glass backdrop-blur-2xl">
+        <div className="mx-auto flex max-w-3xl gap-2 overflow-x-auto">
+          <PersonalNavButton active={tab === "home"} icon={<Home />} label="Accueil" onClick={() => onTabChange("home")} />
+          <PersonalNavButton active={tab === "calendar"} icon={<CalendarDays />} label="Agenda" onClick={() => onTabChange("calendar")} />
+          <PersonalNavButton active={tab === "tasks"} icon={<CheckSquare />} label="Tâches" onClick={() => onTabChange("tasks")} />
+          <PersonalNavButton active={tab === "shopping"} icon={<ShoppingBasket />} label="Courses" onClick={() => onTabChange("shopping")} />
+          <PersonalNavButton active={tab === "budget"} icon={<PiggyBank />} label={isChild ? "Temps" : "Budget"} onClick={() => onTabChange("budget")} />
+          <PersonalNavButton active={tab === "weather"} icon={<SunMedium />} label="Météo" onClick={() => onTabChange("weather")} />
+          <PersonalNavButton active={tab === "thanks"} icon={<Heart />} label="Merci" onClick={() => onTabChange("thanks")} />
+        </div>
+      </nav>
+
+      {children}
+    </main>
+  );
+}
+
+function PersonalNavButton({
+  active,
+  icon,
+  label,
+  onClick,
+}: {
+  active: boolean;
+  icon: ReactNode;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex min-w-20 flex-col items-center justify-center gap-1 rounded-2xl px-3 py-2 text-xs font-black transition [&_svg]:h-5 [&_svg]:w-5 ${
+        active ? "bg-slate-950 text-white" : "bg-white/70 text-slate-600"
+      }`}
+    >
+      {icon}
+      {label}
+    </button>
+  );
+}
+
+function renderPersonalTab(
+  tab: PersonalTab,
+  data: AppData,
+  onDataChange: (data: AppData) => void,
+  memberId: string,
+  isChild: boolean,
+) {
+  switch (tab) {
+    case "calendar":
+      return <FamilyCalendar data={data} onDataChange={onDataChange} selectedMemberId={memberId} expanded />;
+    case "tasks":
+      return <TaskBoard data={data} onDataChange={onDataChange} selectedMemberId={memberId} expanded />;
+    case "shopping":
+      return <ShoppingList data={data} onDataChange={onDataChange} expanded />;
+    case "budget":
+      return isChild ? <RewardCounter data={data} memberId={memberId} /> : <BudgetCard data={data} onDataChange={onDataChange} />;
+    case "weather":
+      return <WeatherCard weather={data.weather} />;
+    case "thanks":
+      return <DailyThanks data={data} onDataChange={onDataChange} />;
+    case "home":
+      return (
+        <div className="space-y-4">
+          <div>
+            <p className="text-sm font-black uppercase tracking-[0.16em] text-slate-500">Aujourd'hui</p>
+            <h1 className="mt-1 text-3xl font-black text-slate-950">Mon espace</h1>
+          </div>
+          <div className="grid gap-4">
+            <div className="rounded-[1.5rem] bg-white/65 p-4">
+              <h2 className="mb-3 text-lg font-black">Mes tâches</h2>
+              <TaskBoard data={data} onDataChange={onDataChange} selectedMemberId={memberId} />
+            </div>
+            <div className="rounded-[1.5rem] bg-white/65 p-4">
+              <h2 className="mb-3 text-lg font-black">Mon planning</h2>
+              <FamilyCalendar data={data} onDataChange={onDataChange} selectedMemberId={memberId} />
+            </div>
+            <div className="rounded-[1.5rem] bg-white/65 p-4">
+              <h2 className="mb-3 text-lg font-black">{isChild ? "Mon temps gagné" : "Budget famille"}</h2>
+              {isChild ? <RewardCounter data={data} memberId={memberId} /> : <BudgetCard data={data} onDataChange={onDataChange} />}
+            </div>
+          </div>
+        </div>
+      );
+  }
 }
 
 function getHourlyEmoji(rain: number) {
