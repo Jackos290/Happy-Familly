@@ -190,7 +190,7 @@ function TaskForm({
   onSubmit: (event: FormEvent) => void;
 }) {
   return (
-    <form onSubmit={onSubmit} className="grid gap-3 rounded-3xl bg-white/50 p-3 md:grid-cols-[1fr_180px_150px_120px_auto]">
+    <form onSubmit={onSubmit} className="grid grid-cols-1 gap-3 rounded-3xl bg-white/50 p-3 xl:grid-cols-[minmax(0,1fr)_minmax(150px,180px)_minmax(130px,150px)_90px_56px]">
       <input
         className="field"
         value={title}
@@ -216,7 +216,7 @@ function TaskForm({
         onChange={(event) => onRewardMinutesChange(Number(event.target.value))}
         title="Minutes gagnées"
       />
-      <button className="icon-button" title="Ajouter la tâche">
+      <button className="icon-button justify-self-end" title="Ajouter la tâche">
         <Plus className="h-5 w-5" />
       </button>
     </form>

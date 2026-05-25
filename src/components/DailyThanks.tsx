@@ -41,7 +41,7 @@ export default function DailyThanks({ data, onDataChange }: Props) {
           </div>
         ))}
       </div>
-      <form onSubmit={addThanks} className="grid gap-3 rounded-3xl bg-white/50 p-3 sm:grid-cols-[1fr_220px_auto]">
+      <form onSubmit={addThanks} className="grid grid-cols-1 gap-3 rounded-3xl bg-white/50 p-3 xl:grid-cols-[minmax(0,1fr)_200px_56px]">
         <input
           className="field"
           value={text}
@@ -62,7 +62,7 @@ export default function DailyThanks({ data, onDataChange }: Props) {
             ))}
           </select>
         </div>
-        <button className="icon-button" title="Ajouter un merci">
+        <button className="icon-button justify-self-end" title="Ajouter un merci">
           <Plus className="h-5 w-5" />
         </button>
       </form>

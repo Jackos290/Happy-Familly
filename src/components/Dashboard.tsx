@@ -147,17 +147,11 @@ export default function Dashboard({ data, onDataChange, refreshKey, syncStatus }
   return (
     <main className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,#e0f2fe_0,#f8fafc_34%,#fff7ed_72%,#f8fafc_100%)] px-4 py-4 text-slate-900 sm:px-6 lg:px-8">
       <div className="mx-auto flex max-w-[1500px] flex-col gap-5">
-        <header className="flex flex-col gap-4 rounded-[2rem] border border-white/70 bg-white/60 px-5 py-4 shadow-glass backdrop-blur-2xl md:flex-row md:items-start md:justify-between md:px-8">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-sky-700">
-              Happy Familly
-            </p>
-            <h1 className="mt-1 text-3xl font-bold leading-tight text-slate-950 sm:text-4xl">
-              Bonjour la famille
-            </h1>
-            <p className="mt-1 text-lg capitalize text-slate-600">{now}</p>
+        <header className="flex flex-col gap-3 rounded-[1.5rem] border border-white/70 bg-white/60 px-4 py-3 shadow-glass backdrop-blur-2xl lg:flex-row lg:items-center lg:justify-between lg:px-6">
+          <div className="flex flex-wrap items-center gap-3">
+            <p className="min-w-36 text-lg font-black capitalize text-slate-800">{now}</p>
             {nextHours.length > 0 && (
-              <div className="mt-3 flex max-w-3xl flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2">
                 {nextHours.map((hour) => <ForecastPill key={hour.time} hour={hour} />)}
               </div>
             )}
@@ -263,9 +257,9 @@ function getHourlyEmoji(rain: number) {
 
 function ForecastPill({ hour }: { hour: HourlyForecast }) {
   return (
-    <span className="flex min-w-16 flex-col items-center rounded-2xl bg-white/85 px-3 py-2 text-sm font-black text-slate-700 shadow-sm">
+    <span className="flex min-w-14 flex-col items-center rounded-2xl bg-white/85 px-3 py-1.5 text-xs font-black text-slate-700 shadow-sm">
       <span>{hour.time}</span>
-      <span className="text-2xl leading-6">{getHourlyEmoji(hour.rain)}</span>
+      <span className="text-xl leading-5">{getHourlyEmoji(hour.rain)}</span>
     </span>
   );
 }

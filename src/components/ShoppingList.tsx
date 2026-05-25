@@ -108,7 +108,7 @@ export default function ShoppingList({ data, onDataChange, expanded = false }: P
         />
       )}
 
-      <form onSubmit={addItem} className="flex gap-3 rounded-3xl bg-white/50 p-3">
+      <form onSubmit={addItem} className="grid grid-cols-[minmax(0,1fr)_56px] gap-3 rounded-3xl bg-white/50 p-3">
         <input
           className="field"
           value={label}

@@ -75,7 +75,7 @@ export default function BudgetCard({ data, onDataChange }: Props) {
         ))}
       </div>
 
-      <form onSubmit={addExpense} className="grid gap-3 rounded-3xl bg-white/50 p-3 sm:grid-cols-[1fr_120px_auto]">
+      <form onSubmit={addExpense} className="grid grid-cols-1 gap-3 rounded-3xl bg-white/50 p-3 xl:grid-cols-[minmax(0,1fr)_110px_56px]">
         <input
           className="field"
           value={label}
@@ -91,7 +91,7 @@ export default function BudgetCard({ data, onDataChange }: Props) {
           onChange={(event) => setAmount(event.target.value)}
           placeholder="€"
         />
-        <button className="icon-button" title="Ajouter la dépense">
+        <button className="icon-button justify-self-end" title="Ajouter la dépense">
           <Plus className="h-5 w-5" />
         </button>
       </form>

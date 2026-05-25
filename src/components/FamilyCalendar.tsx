@@ -257,12 +257,12 @@ function CalendarForm({
   onPersonChange: (value: string) => void;
 }) {
   return (
-    <form onSubmit={onSubmit} className="grid gap-3 rounded-3xl bg-white/50 p-3 md:grid-cols-[1fr_160px_130px_180px_auto]">
+    <form onSubmit={onSubmit} className="grid grid-cols-1 gap-3 rounded-3xl bg-white/50 p-3 xl:grid-cols-[minmax(0,1fr)_150px_120px_minmax(150px,180px)_56px]">
       <input className="field" value={title} onChange={(event) => onTitleChange(event.target.value)} placeholder="Ajouter un événement ou rendez-vous" />
       <input className="field" type="date" value={date} onChange={(event) => onDateChange(event.target.value)} />
       <input className="field" type="time" value={time} onChange={(event) => onTimeChange(event.target.value)} />
       <MemberSelect data={data} value={personId} onChange={onPersonChange} />
-      <button className="icon-button" title="Ajouter l'événement">
+      <button className="icon-button justify-self-end" title="Ajouter l'événement">
         <Plus className="h-5 w-5" />
       </button>
     </form>
