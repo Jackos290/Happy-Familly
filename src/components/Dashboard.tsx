@@ -49,14 +49,15 @@ type WakeLockNavigator = Navigator & {
 export default function Dashboard({ data, onDataChange, refreshKey, syncStatus }: DashboardProps) {
   const wakeLockRef = useRef<WakeLockSentinelLike | null>(null);
   const [tabletModeActive, setTabletModeActive] = useState(false);
-  const [tabletModeMessage, setTabletModeMessage] = useState("PrÃªt pour la tablette");
+  const [tabletModeMessage, setTabletModeMessage] = useState("Prêt pour la tablette");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [expandedPanel, setExpandedPanel] = useState<PanelId | null>(null);
   const [nextHours, setNextHours] = useState<HourlyForecast[]>([]);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
 
-  const selectedMember = data.familyMembers.find((member) => member.id === selectedMemberId);
-  const selectedMemberIsChild = Boolean(selectedMember && isChildMember(selectedMember.name, selectedMember.id));
+  const selectedMemberIsChild = data.familyMembers.some(
+    (member) => member.id === selectedMemberId && isChildMember(member.name, member.id),
+  );
 
   const now = new Intl.DateTimeFormat("fr-FR", {
     weekday: "long",
@@ -76,9 +77,9 @@ export default function Dashboard({ data, onDataChange, refreshKey, syncStatus }
       wakeLockRef.current.addEventListener("release", () => {
         wakeLockRef.current = null;
       });
-      setTabletModeMessage("Plein Ã©cran et anti-veille actifs");
+      setTabletModeMessage("Plein écran et anti-veille actifs");
     } catch {
-      setTabletModeMessage("Anti-veille refusÃ© par le navigateur");
+      setTabletModeMessage("Anti-veille refusé par le navigateur");
     }
   }
 
@@ -203,28 +204,16 @@ export default function Dashboard({ data, onDataChange, refreshKey, syncStatus }
         <p className="sr-only" aria-live="polite">
           {tabletModeMessage}
         </p>
-        {selectedMember && (
-          <div className="flex items-center justify-between gap-3 rounded-3xl bg-slate-950 px-5 py-3 text-white shadow-glass">
-            <p className="font-bold">Vue filtrÃ©e : {selectedMember.name}</p>
-            <button
-              onClick={() => setSelectedMemberId(null)}
-              className="rounded-full bg-white/15 px-4 py-2 text-sm font-bold transition hover:bg-white/25"
-            >
-              Tout le monde
-            </button>
-          </div>
-        )}
-
         <section className="grid auto-rows-fr gap-5 lg:grid-cols-12">
           <Panel id="calendar" className="lg:col-span-5" icon={<CalendarDays />} title="Calendrier" onExpand={setExpandedPanel}>
             <FamilyCalendar data={data} onDataChange={onDataChange} selectedMemberId={selectedMemberId} />
           </Panel>
 
-          <Panel id="tasks" className="lg:col-span-4" icon={<CheckSquare />} title="TÃ¢ches" onExpand={setExpandedPanel}>
+          <Panel id="tasks" className="lg:col-span-4" icon={<CheckSquare />} title="Tâches" onExpand={setExpandedPanel}>
             <TaskBoard data={data} onDataChange={onDataChange} selectedMemberId={selectedMemberId} />
           </Panel>
 
-          <Panel id="weather" className="lg:col-span-3" icon={<SunMedium />} title="MÃ©tÃ©o Gorcy" onExpand={setExpandedPanel}>
+          <Panel id="weather" className="lg:col-span-3" icon={<SunMedium />} title="Météo Gorcy" onExpand={setExpandedPanel}>
             <WeatherCard weather={data.weather} />
           </Panel>
 
@@ -371,8 +360,8 @@ function Modal({
 function getPanelTitle(panel: PanelId) {
   const titles: Record<PanelId, string> = {
     calendar: "Calendrier",
-    tasks: "TÃ¢ches",
-    weather: "MÃ©tÃ©o de Gorcy",
+    tasks: "Tâches",
+    weather: "Météo de Gorcy",
     shopping: "Courses",
     budget: "Budget",
     quote: "Phrase du jour",
@@ -410,5 +399,6 @@ function renderExpandedPanel(
       return <DailyThanks data={data} onDataChange={onDataChange} />;
   }
 }
+
 
 
