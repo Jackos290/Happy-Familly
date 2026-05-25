@@ -24,7 +24,7 @@ export default async function handler(request, response) {
   try {
     if (request.method === "GET") {
       const supabaseResponse = await fetch(
-        `${SUPABASE_URL}/rest/v1/app_state?id=eq.${APP_STATE_ID}&select=data`,
+        `${SUPABASE_URL}/rest/v1/app_state?id=eq.${APP_STATE_ID}&select=data,updated_at`,
         {
           headers: supabaseHeaders(),
         },
@@ -36,24 +36,28 @@ export default async function handler(request, response) {
         return;
       }
 
-      response.status(200).json({ data: payload[0]?.data ?? null });
+      response.status(200).json({
+        data: payload[0]?.data ?? null,
+        updatedAt: payload[0]?.updated_at ?? null,
+      });
       return;
     }
 
     if (request.method === "POST") {
       const body = request.body;
       const appData = typeof body === "string" ? JSON.parse(body).data : body.data;
+      const updatedAt = new Date().toISOString();
       const supabaseResponse = await fetch(`${SUPABASE_URL}/rest/v1/app_state`, {
         method: "POST",
         headers: {
           ...supabaseHeaders(),
           "Content-Type": "application/json",
-          Prefer: "resolution=merge-duplicates",
+          Prefer: "resolution=merge-duplicates,return=representation",
         },
         body: JSON.stringify({
           id: APP_STATE_ID,
           data: appData,
-          updated_at: new Date().toISOString(),
+          updated_at: updatedAt,
         }),
       });
 
@@ -63,7 +67,14 @@ export default async function handler(request, response) {
         return;
       }
 
-      response.status(200).json({ ok: true });
+      let payload = [];
+      try {
+        payload = await supabaseResponse.json();
+      } catch {
+        payload = [];
+      }
+
+      response.status(200).json({ ok: true, updatedAt: payload[0]?.updated_at ?? updatedAt });
       return;
     }
 

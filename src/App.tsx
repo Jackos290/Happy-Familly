@@ -9,24 +9,33 @@ export default function App() {
   const [data, setData] = useState<AppData>(() => loadAppData());
   const [refreshKey, setRefreshKey] = useState(0);
   const [syncStatus, setSyncStatus] = useState("Connexion Supabase...");
+  const [accessChoice, setAccessChoice] = useState<AccessChoice | null>(null);
   const remoteReadyRef = useRef(false);
   const applyingRemoteRef = useRef(false);
   const pendingLocalSaveRef = useRef(false);
-  const [accessChoice, setAccessChoice] = useState<AccessChoice | null>(null);
+  const savingRemoteRef = useRef(false);
+  const lastRemoteUpdatedAtRef = useRef<string | null>(null);
 
   useEffect(() => {
     saveAppData(data);
 
-    if (!remoteReadyRef.current || applyingRemoteRef.current) {
+    if (!remoteReadyRef.current || applyingRemoteRef.current || !pendingLocalSaveRef.current) {
       return;
     }
 
+    setSyncStatus("Sauvegarde...");
     const timeout = window.setTimeout(() => {
-      void saveRemoteAppData(data).then((error) => {
-        if (!error) {
-          pendingLocalSaveRef.current = false;
+      savingRemoteRef.current = true;
+
+      void saveRemoteAppData(data).then((result) => {
+        savingRemoteRef.current = false;
+        pendingLocalSaveRef.current = false;
+
+        if (result.updatedAt) {
+          lastRemoteUpdatedAtRef.current = result.updatedAt;
         }
-        setSyncStatus(error ? `Erreur Supabase: ${error}` : "Synchronisé");
+
+        setSyncStatus(result.error ? `Erreur Supabase: ${result.error}` : "Synchronisé");
       });
     }, 500);
 
@@ -37,28 +46,38 @@ export default function App() {
     let mounted = true;
 
     async function applyRemoteData() {
-      const { data: remoteData, error } = await loadRemoteAppData();
+      const { data: remoteData, updatedAt, error } = await loadRemoteAppData();
       if (!mounted) return;
 
       if (error) {
+        remoteReadyRef.current = true;
         setSyncStatus(`Erreur Supabase: ${error}`);
         return;
       }
 
       if (remoteData) {
-        if (pendingLocalSaveRef.current) {
+        if (savingRemoteRef.current) {
           return;
         }
 
-        applyingRemoteRef.current = true;
-        setData(remoteData);
-        setSyncStatus("Synchronisé");
-        window.setTimeout(() => {
-          applyingRemoteRef.current = false;
-        }, 0);
+        const hasNewRemoteData = !updatedAt || updatedAt !== lastRemoteUpdatedAtRef.current;
+        if (hasNewRemoteData) {
+          applyingRemoteRef.current = true;
+          lastRemoteUpdatedAtRef.current = updatedAt;
+          setData(remoteData);
+          setSyncStatus("Synchronisé");
+          window.setTimeout(() => {
+            applyingRemoteRef.current = false;
+          }, 0);
+        } else {
+          setSyncStatus("Synchronisé");
+        }
       } else {
-        const saveError = await saveRemoteAppData(loadAppData());
-        setSyncStatus(saveError ? `Erreur Supabase: ${saveError}` : "Synchronisé");
+        const result = await saveRemoteAppData(loadAppData());
+        if (result.updatedAt) {
+          lastRemoteUpdatedAtRef.current = result.updatedAt;
+        }
+        setSyncStatus(result.error ? `Erreur Supabase: ${result.error}` : "Synchronisé");
       }
 
       remoteReadyRef.current = true;
@@ -68,7 +87,7 @@ export default function App() {
 
     const polling = window.setInterval(() => {
       void applyRemoteData();
-    }, 5_000);
+    }, 2_500);
 
     return () => {
       mounted = false;

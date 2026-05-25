@@ -1,24 +1,40 @@
 import type { AppData } from "../types";
 
-export async function loadRemoteAppData() {
+export type RemoteLoadResult = {
+  data: AppData | null;
+  updatedAt: string | null;
+  error: string | null;
+};
+
+export type RemoteSaveResult = {
+  updatedAt: string | null;
+  error: string | null;
+};
+
+export async function loadRemoteAppData(): Promise<RemoteLoadResult> {
   try {
-    const response = await fetch("/api/app-state");
+    const response = await fetch("/api/app-state", { cache: "no-store" });
     const payload = await response.json();
 
     if (!response.ok) {
-      return { data: null, error: formatApiError(payload) };
+      return { data: null, updatedAt: null, error: formatApiError(payload) };
     }
 
-    return { data: (payload.data as AppData | null) ?? null, error: null };
+    return {
+      data: (payload.data as AppData | null) ?? null,
+      updatedAt: (payload.updatedAt as string | null) ?? null,
+      error: null,
+    };
   } catch (error) {
     return {
       data: null,
+      updatedAt: null,
       error: error instanceof Error ? error.message : "Erreur réseau inconnue",
     };
   }
 }
 
-export async function saveRemoteAppData(data: AppData) {
+export async function saveRemoteAppData(data: AppData): Promise<RemoteSaveResult> {
   try {
     const response = await fetch("/api/app-state", {
       method: "POST",
@@ -30,17 +46,19 @@ export async function saveRemoteAppData(data: AppData) {
     const payload = await response.json();
 
     if (!response.ok) {
-      return formatApiError(payload);
+      return { updatedAt: null, error: formatApiError(payload) };
     }
 
-    return null;
+    return {
+      updatedAt: (payload.updatedAt as string | null) ?? null,
+      error: null,
+    };
   } catch (error) {
-    return error instanceof Error ? error.message : "Erreur réseau inconnue";
+    return {
+      updatedAt: null,
+      error: error instanceof Error ? error.message : "Erreur réseau inconnue",
+    };
   }
-}
-
-export function subscribeToRemoteAppData() {
-  return () => undefined;
 }
 
 function formatApiError(payload: any) {
