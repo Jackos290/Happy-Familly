@@ -43,6 +43,7 @@ export default function WeatherCard({ weather }: Props) {
 
 function WeatherSummary({ title, weather, status }: { title: string; weather: Weather; status: string }) {
   const isRainy = weather.condition === "rain";
+  const displayTemperature = title === "Aujourd'hui" ? weather.temperature : weather.maxTemperature ?? weather.temperature;
 
   return (
     <div className="rounded-[1.5rem] bg-white/60 p-5">
@@ -52,7 +53,7 @@ function WeatherSummary({ title, weather, status }: { title: string; weather: We
             {title} · {status}
           </p>
           <p className="mt-2 text-5xl font-black text-slate-950">
-            {weather.maxTemperature ?? weather.temperature}°C
+            {displayTemperature}°C
           </p>
           <p className="mt-1 font-semibold text-slate-500">
             {weather.label ?? "Prévision"} · min {weather.minTemperature ?? weather.temperature}°C

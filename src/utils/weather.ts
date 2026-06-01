@@ -19,6 +19,7 @@ export async function fetchGorcyForecast(): Promise<GorcyForecast> {
   const params = new URLSearchParams({
     latitude: String(GORCY_LATITUDE),
     longitude: String(GORCY_LONGITUDE),
+    current: "temperature_2m,weather_code,wind_speed_10m",
     daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max",
     hourly: "temperature_2m,precipitation_probability",
     timezone: "Europe/Paris",
@@ -28,24 +29,32 @@ export async function fetchGorcyForecast(): Promise<GorcyForecast> {
   const result = await response.json();
 
   return {
-    today: mapDailyWeather(result, 0),
+    today: mapDailyWeather(result, 0, true),
     tomorrow: mapDailyWeather(result, 1),
     nextHours: mapNextHours(result),
   };
 }
 
-function mapDailyWeather(result: any, index: number): Weather {
-  const weatherCode = Number(result.daily.weather_code[index]);
+function mapDailyWeather(result: any, index: number, useCurrent = false): Weather {
+  const weatherCode = useCurrent && result.current?.weather_code !== undefined
+    ? Number(result.current.weather_code)
+    : Number(result.daily.weather_code[index]);
   const minTemperature = Math.round(Number(result.daily.temperature_2m_min[index]));
   const maxTemperature = Math.round(Number(result.daily.temperature_2m_max[index]));
   const precipitation = Number(result.daily.precipitation_sum[index]);
+  const currentTemperature = useCurrent && result.current?.temperature_2m !== undefined
+    ? Math.round(Number(result.current.temperature_2m))
+    : maxTemperature;
+  const currentWind = useCurrent && result.current?.wind_speed_10m !== undefined
+    ? Math.round(Number(result.current.wind_speed_10m))
+    : Math.round(Number(result.daily.wind_speed_10m_max[index]));
 
   return {
-    temperature: maxTemperature,
+    temperature: currentTemperature,
     minTemperature,
     maxTemperature,
-    windKmh: Math.round(Number(result.daily.wind_speed_10m_max[index])),
-    condition: precipitation > 0.2 || isRainCode(weatherCode) ? "rain" : "sun",
+    windKmh: currentWind,
+    condition: (useCurrent ? isRainCode(weatherCode) : precipitation > 0.2 || isRainCode(weatherCode)) ? "rain" : "sun",
     label: getWeatherLabel(weatherCode),
   };
 }

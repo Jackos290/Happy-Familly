@@ -8,7 +8,6 @@
   Home,
   ListTodo,
   PiggyBank,
-  Quote,
   RefreshCw,
   Settings,
   ShoppingBasket,
@@ -17,7 +16,7 @@
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import type { AppData } from "../types";
+import type { AppData, Weather } from "../types";
 import { createId } from "../utils/localStorage";
 import type { HourlyForecast } from "../utils/weather";
 import { fetchGorcyForecast } from "../utils/weather";
@@ -27,7 +26,6 @@ import FamilyCalendar from "./FamilyCalendar";
 import FamilySettings from "./FamilySettings";
 import GoogleCalendarSync from "./GoogleCalendarSync";
 import ParentTodoList from "./ParentTodoList";
-import PositiveQuote from "./PositiveQuote";
 import ShoppingList from "./ShoppingList";
 import TaskBoard from "./TaskBoard";
 import WeatherCard from "./WeatherCard";
@@ -42,7 +40,7 @@ type DashboardProps = {
   onBackToChooser?: () => void;
 };
 
-type PanelId = "calendar" | "tasks" | "weather" | "shopping" | "budget" | "quote" | "thanks";
+type PanelId = "calendar" | "tasks" | "weather" | "shopping" | "budget" | "thanks";
 type PersonalTab = "home" | "calendar" | "tasks" | "todo" | "shopping" | "budget" | "weather" | "thanks";
 
 type WakeLockSentinelLike = {
@@ -71,6 +69,7 @@ export default function Dashboard({
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [expandedPanel, setExpandedPanel] = useState<PanelId | null>(null);
   const [nextHours, setNextHours] = useState<HourlyForecast[]>([]);
+  const [salonWeather, setSalonWeather] = useState<Weather>(data.weather);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(initialMemberId);
   const [personalTab, setPersonalTab] = useState<PersonalTab>("home");
 
@@ -157,6 +156,7 @@ export default function Dashboard({
       try {
         const forecast = await fetchGorcyForecast();
         setNextHours(forecast.nextHours);
+        setSalonWeather(forecast.today);
       } catch {
         setNextHours([]);
       }
@@ -285,7 +285,7 @@ export default function Dashboard({
         <p className="sr-only" aria-live="polite">
           {tabletModeMessage}
         </p>
-        <section className="grid min-h-0 flex-1 auto-rows-fr gap-3 overflow-hidden lg:grid-cols-12 lg:grid-rows-[minmax(0,1fr)_minmax(0,0.82fr)]">
+        <section className="grid min-h-0 flex-1 auto-rows-fr gap-3 overflow-hidden lg:grid-cols-12 lg:grid-rows-[minmax(0,1fr)_minmax(0,0.62fr)]">
           <Panel id="calendar" className="lg:col-span-5" icon={<CalendarDays />} title="Calendrier" onExpand={setExpandedPanel}>
             <CalendarSummary data={data} selectedMemberId={selectedMemberId} />
           </Panel>
@@ -295,7 +295,7 @@ export default function Dashboard({
           </Panel>
 
           <Panel id="weather" className="lg:col-span-3" icon={<SunMedium />} title="Météo Gorcy" onExpand={setExpandedPanel}>
-            <WeatherSummary data={data} />
+            <WeatherSummary weather={salonWeather} />
           </Panel>
 
           <Panel id="shopping" className="lg:col-span-4" icon={<ShoppingBasket />} title="Courses" onExpand={setExpandedPanel}>
@@ -311,9 +311,6 @@ export default function Dashboard({
           </Panel>
 
           <div className="grid min-h-0 gap-3 overflow-hidden lg:col-span-4">
-            <Panel id="quote" icon={<Quote />} title="Phrase du jour" onExpand={setExpandedPanel}>
-              <QuoteSummary data={data} />
-            </Panel>
             <Panel id="thanks" icon={<Heart />} title="Merci" onExpand={setExpandedPanel}>
               <ThanksSummary data={data} />
             </Panel>
@@ -425,20 +422,20 @@ function TasksSummary({ data, selectedMemberId }: { data: AppData; selectedMembe
   );
 }
 
-function WeatherSummary({ data }: { data: AppData }) {
+function WeatherSummary({ weather }: { weather: Weather }) {
   return (
     <div className="grid h-full min-h-0 content-center gap-3">
       <div className="rounded-3xl border border-[#3a3463] bg-[#211d3d] p-4">
         <p className="text-xs font-black uppercase tracking-[0.16em] text-white/45">Aujourd'hui</p>
         <div className="mt-2 flex items-center justify-between gap-3">
-          <p className="text-5xl font-black text-white">{data.weather.temperature}°C</p>
+          <p className="text-5xl font-black text-white">{weather.temperature}°C</p>
           <CloudSun className="h-12 w-12 text-[#ffd38a]" />
         </div>
-        <p className="mt-2 text-sm font-bold text-white/60">{data.weather.label ?? (data.weather.condition === "rain" ? "Pluie" : "Soleil")} · vent {data.weather.windKmh} km/h</p>
+        <p className="mt-2 text-sm font-bold text-white/60">{weather.label ?? (weather.condition === "rain" ? "Pluie" : "Soleil")} · max {weather.maxTemperature ?? weather.temperature}°C · vent {weather.windKmh} km/h</p>
       </div>
       <div className="rounded-3xl border border-[#3a3463] bg-[#17142c] p-4 text-white">
         <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ffd38a]">Conseil enfants</p>
-        <p className="mt-2 text-base font-black">{getClothingAdvice(data.weather.temperature, data.weather.condition)}</p>
+        <p className="mt-2 text-base font-black">{getClothingAdvice(weather.temperature, weather.condition)}</p>
       </div>
     </div>
   );
@@ -500,14 +497,6 @@ function RewardSummary({ data, memberId }: { data: AppData; memberId: string }) 
       <div className="rounded-3xl border border-[#3a3463] bg-[#17142c] p-4">
         <p className="text-sm font-black text-white/70">{remainingTasks.length} tâche(s) pour gagner du temps</p>
       </div>
-    </div>
-  );
-}
-
-function QuoteSummary({ data }: { data: AppData }) {
-  return (
-    <div className="flex h-full items-center">
-      <p className="line-clamp-3 w-full rounded-3xl border border-[#3a3463] bg-[#17142c] p-4 text-xl font-black leading-tight text-white">{data.positiveQuote}</p>
     </div>
   );
 }
@@ -1444,7 +1433,6 @@ function getPanelTitle(panel: PanelId) {
     weather: "Météo de Gorcy",
     shopping: "Courses",
     budget: "Budget",
-    quote: "Phrase du jour",
     thanks: "Merci",
   };
   return titles[panel];
@@ -1473,8 +1461,6 @@ function renderExpandedPanel(
         }
       }
       return <BudgetCard data={data} onDataChange={onDataChange} />;
-    case "quote":
-      return <PositiveQuote data={data} onDataChange={onDataChange} />;
     case "thanks":
       return <DailyThanks data={data} onDataChange={onDataChange} />;
   }
