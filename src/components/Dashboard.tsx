@@ -628,7 +628,7 @@ function PersonalApp({
       {!isHome && (
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#151229]/95 px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 shadow-glass backdrop-blur-2xl">
         <div className="mx-auto grid max-w-3xl grid-cols-4 gap-1.5">
-          <PersonalNavButton active={tab === "home"} icon={<Home />} label="Accueil" onClick={() => onTabChange("home")} />
+          <PersonalNavButton active={false} icon={<Home />} label="Accueil" onClick={() => onTabChange("home")} />
           <PersonalNavButton active={tab === "calendar"} icon={<CalendarDays />} label="Agenda" onClick={() => onTabChange("calendar")} />
           <PersonalNavButton active={tab === "tasks"} icon={<CheckSquare />} label="Tâches" onClick={() => onTabChange("tasks")} />
           {!isChild && <PersonalNavButton active={tab === "todo"} icon={<ListTodo />} label="Todo" onClick={() => onTabChange("todo")} />}
