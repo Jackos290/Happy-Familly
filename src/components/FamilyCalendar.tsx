@@ -15,6 +15,16 @@ type Props = {
 
 type CalendarView = "month" | "week" | "day";
 
+const WEEKDAY_OPTIONS = [
+  { value: 1, label: "Lun" },
+  { value: 2, label: "Mar" },
+  { value: 3, label: "Mer" },
+  { value: 4, label: "Jeu" },
+  { value: 5, label: "Ven" },
+  { value: 6, label: "Sam" },
+  { value: 0, label: "Dim" },
+];
+
 export default function FamilyCalendar({ data, onDataChange, expanded = false, selectedMemberId = null }: Props) {
   const members = data.familyMembers ?? [];
   const calendarEvents = data.calendarEvents ?? [];
@@ -22,6 +32,8 @@ export default function FamilyCalendar({ data, onDataChange, expanded = false, s
   const [time, setTime] = useState("17:00");
   const [date, setDate] = useState(toDateKey(new Date()));
   const [personId, setPersonId] = useState(selectedMemberId ?? members[0]?.id ?? "");
+  const [recurrence, setRecurrence] = useState<CalendarEvent["recurrence"]>("none");
+  const [weekdays, setWeekdays] = useState<number[]>([new Date().getDay()]);
   const [view, setView] = useState<CalendarView>("month");
   const [cursorDate, setCursorDate] = useState(new Date());
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
@@ -31,7 +43,10 @@ export default function FamilyCalendar({ data, onDataChange, expanded = false, s
   const [editPersonId, setEditPersonId] = useState("");
 
   const dashboardEventsByDate = useMemo(() => {
-    const events = uniqueEvents([...getSpecialEventsForDashboard(), ...calendarEvents]).filter((event) =>
+    const dashboardStart = atNoon(new Date());
+    const dashboardEnd = atNoon(new Date());
+    dashboardEnd.setDate(dashboardEnd.getDate() + 1);
+    const events = uniqueEvents([...getSpecialEventsForDashboard(), ...expandRecurringEvents(calendarEvents, dashboardStart, dashboardEnd)]).filter((event) =>
       matchesSelectedMember(event, selectedMemberId),
     );
 
@@ -51,7 +66,7 @@ export default function FamilyCalendar({ data, onDataChange, expanded = false, s
 
   const range = getViewRange(cursorDate, view);
   const rangeEvents = useMemo(() => {
-    const events = uniqueEvents([...getSpecialEventsForRange(range.start, range.end), ...calendarEvents]).filter((event) =>
+    const events = uniqueEvents([...getSpecialEventsForRange(range.start, range.end), ...expandRecurringEvents(calendarEvents, range.start, range.end)]).filter((event) =>
       matchesSelectedMember(event, selectedMemberId),
     );
 
@@ -92,6 +107,8 @@ export default function FamilyCalendar({ data, onDataChange, expanded = false, s
           dateISO: safeDate,
           personId: safePersonId,
           source: "manual",
+          recurrence,
+          weekdays: recurrence === "weekly" ? normalizeWeekdays(weekdays, safeDate) : undefined,
         },
       ],
     });
@@ -151,12 +168,16 @@ export default function FamilyCalendar({ data, onDataChange, expanded = false, s
           time={time}
           date={date}
           personId={personId}
+          recurrence={recurrence}
+          weekdays={weekdays}
           data={data}
           onSubmit={addEvent}
           onTitleChange={setTitle}
           onTimeChange={setTime}
           onDateChange={setDate}
           onPersonChange={setPersonId}
+          onRecurrenceChange={setRecurrence}
+          onWeekdaysChange={setWeekdays}
         />
         {selectedEvent && (
           <EventDetail
@@ -206,12 +227,16 @@ export default function FamilyCalendar({ data, onDataChange, expanded = false, s
         time={time}
         date={date}
         personId={personId}
+        recurrence={recurrence}
+        weekdays={weekdays}
         data={data}
         onSubmit={addEvent}
         onTitleChange={setTitle}
         onTimeChange={setTime}
         onDateChange={setDate}
         onPersonChange={setPersonId}
+        onRecurrenceChange={setRecurrence}
+        onWeekdaysChange={setWeekdays}
       />
 
       {view === "month" ? (
@@ -249,30 +274,63 @@ function CalendarForm({
   time,
   date,
   personId,
+  recurrence,
+  weekdays,
   data,
   onSubmit,
   onTitleChange,
   onTimeChange,
   onDateChange,
   onPersonChange,
+  onRecurrenceChange,
+  onWeekdaysChange,
 }: {
   title: string;
   time: string;
   date: string;
   personId: string;
+  recurrence: CalendarEvent["recurrence"];
+  weekdays: number[];
   data: AppData;
   onSubmit: (event: FormEvent) => void;
   onTitleChange: (value: string) => void;
   onTimeChange: (value: string) => void;
   onDateChange: (value: string) => void;
   onPersonChange: (value: string) => void;
+  onRecurrenceChange: (value: CalendarEvent["recurrence"]) => void;
+  onWeekdaysChange: (value: number[]) => void;
 }) {
+  function toggleWeekday(day: number) {
+    const next = weekdays.includes(day)
+      ? weekdays.filter((item) => item !== day)
+      : [...weekdays, day];
+    onWeekdaysChange(next.length > 0 ? next : [day]);
+  }
+
   return (
     <form onSubmit={onSubmit} className="flex flex-wrap items-center gap-3 rounded-3xl bg-white/50 p-3">
       <input className="field min-w-0 flex-[1_1_260px]" value={title} onChange={(event) => onTitleChange(event.target.value)} placeholder="Ajouter un événement ou rendez-vous" />
       <input className="field min-w-36 flex-[1_1_150px]" type="date" value={date} onChange={(event) => onDateChange(event.target.value)} />
       <input className="field min-w-32 flex-[1_1_130px]" type="time" value={time} onChange={(event) => onTimeChange(event.target.value)} />
       <MemberSelect data={data} value={personId} onChange={onPersonChange} />
+      <select className="field min-w-40 flex-[1_1_150px]" value={recurrence ?? "none"} onChange={(event) => onRecurrenceChange(event.target.value as CalendarEvent["recurrence"])}>
+        <option value="none">Une fois</option>
+        <option value="weekly">Récurrent</option>
+      </select>
+      {recurrence === "weekly" && (
+        <div className="flex flex-wrap gap-1 rounded-2xl bg-white/60 p-1">
+          {WEEKDAY_OPTIONS.map((day) => (
+            <button
+              key={day.value}
+              type="button"
+              onClick={() => toggleWeekday(day.value)}
+              className={`h-9 rounded-xl px-2 text-xs font-black ${weekdays.includes(day.value) ? "bg-slate-950 text-white" : "bg-white text-slate-500"}`}
+            >
+              {day.label}
+            </button>
+          ))}
+        </div>
+      )}
       <button className="icon-button shrink-0" title="Ajouter l'événement">
         <Plus className="h-5 w-5" />
       </button>
@@ -576,6 +634,41 @@ function uniqueEvents(events: CalendarEvent[]) {
     seen.add(identity);
     return true;
   });
+}
+
+function expandRecurringEvents(events: CalendarEvent[], start: Date, end: Date) {
+  const expanded: CalendarEvent[] = [];
+  const startKey = toDateKey(start);
+  const endKey = toDateKey(end);
+
+  events.forEach((event) => {
+    if (event.recurrence !== "weekly") {
+      expanded.push(event);
+      return;
+    }
+
+    const firstDateKey = getEventDateKey(event);
+    const activeWeekdays = normalizeWeekdays(event.weekdays ?? [], firstDateKey);
+    const cursor = atNoon(start);
+    while (toDateKey(cursor) <= endKey) {
+      const cursorKey = toDateKey(cursor);
+      if (cursorKey >= firstDateKey && cursorKey >= startKey && activeWeekdays.includes(cursor.getDay())) {
+        expanded.push({
+          ...event,
+          date: getRelativeDateLabel(cursorKey),
+          dateISO: cursorKey,
+        });
+      }
+      cursor.setDate(cursor.getDate() + 1);
+    }
+  });
+
+  return expanded;
+}
+
+function normalizeWeekdays(days: number[], dateKey: string) {
+  if (days.length > 0) return Array.from(new Set(days));
+  return [new Date(`${dateKey}T12:00:00`).getDay()];
 }
 
 function getEventIdentity(event: CalendarEvent) {

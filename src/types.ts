@@ -15,6 +15,8 @@ export type CalendarEvent = {
   personId?: string;
   source?: "manual" | "google";
   externalId?: string;
+  recurrence?: "none" | "weekly";
+  weekdays?: number[];
 };
 
 export type Task = {
@@ -53,11 +55,16 @@ export type Expense = {
   id: string;
   label: string;
   amount: number;
+  recurring?: boolean;
+  type?: "expense" | "income";
 };
 
 export type FamilyBudget = {
   monthlyTotal: number;
   expenses: Expense[];
+  parentIncomes?: Record<string, number>;
+  jointAccountStart?: number;
+  recurringExpenses?: Expense[];
 };
 
 export type ParentTodoItem = {

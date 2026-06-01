@@ -59,11 +59,17 @@ export const defaultData: AppData = {
   ],
   budget: {
     monthlyTotal: 3200,
+    parentIncomes: {
+      papa: 0,
+      maman: 0,
+    },
+    jointAccountStart: 0,
     expenses: [
       { id: "expense-1", label: "Alimentation", amount: 460 },
       { id: "expense-2", label: "Activités enfants", amount: 120 },
       { id: "expense-3", label: "Transport", amount: 180 },
     ],
+    recurringExpenses: [],
   },
   parentTodoSections: [
     {

@@ -234,6 +234,14 @@ export default function Dashboard({
                 {nextHours.map((hour) => <ForecastPill key={hour.time} hour={hour} />)}
               </div>
             )}
+            <div className="flex flex-wrap gap-2">
+              {data.familyMembers.filter((member) => isChildMember(data, member.id)).map((member) => (
+                <span key={member.id} className="inline-flex items-center gap-2 rounded-2xl border border-[#3a3463] bg-[#211d3d] px-3 py-2 text-sm font-black text-[#ffd38a]">
+                  <AvatarBubble member={member} />
+                  {formatMinutesAsTime(getRewardMinutes(data, member.id))}
+                </span>
+              ))}
+            </div>
           </div>
           <div className="flex flex-wrap items-center gap-3">
             {onBackToChooser && (
@@ -468,23 +476,21 @@ function ShoppingSummary({ data }: { data: AppData }) {
 }
 
 function BudgetSummary({ data }: { data: AppData }) {
-  const spent = data.budget.expenses.reduce((total, expense) => total + expense.amount, 0);
-  const total = data.budget.monthlyTotal || 1;
+  const recurringTotal = (data.budget.recurringExpenses ?? []).reduce((total, expense) => total + expense.amount, 0);
+  const spent = data.budget.expenses.reduce((total, expense) => total + expense.amount, 0) + recurringTotal;
+  const incomeTotal = Object.values(data.budget.parentIncomes ?? {}).reduce((total, value) => total + value, 0) + (data.budget.jointAccountStart ?? 0);
+  const total = incomeTotal || data.budget.monthlyTotal || 1;
   const percent = Math.min(100, Math.round((spent / total) * 100));
-  const remaining = Math.max(0, data.budget.monthlyTotal - spent);
   const color = percent < 70 ? "bg-emerald-500" : percent < 90 ? "bg-amber-500" : "bg-rose-500";
 
   return (
     <div className="h-full rounded-3xl border border-[#3a3463] bg-[#17142c] p-4">
-      <div className="grid grid-cols-3 gap-2 text-center">
-        <MetricPill label="Budget" value={`${data.budget.monthlyTotal}€`} />
-        <MetricPill label="Dépensé" value={`${spent}€`} />
-        <MetricPill label="Reste" value={`${remaining}€`} />
-      </div>
-      <div className="mt-4 h-4 overflow-hidden rounded-full bg-[#34305a]">
+      <p className="text-xs font-black uppercase tracking-[0.16em] text-white/45">Budget mensuel</p>
+      <div className="mt-4 h-7 overflow-hidden rounded-full bg-[#34305a]">
         <div className={`h-full rounded-full ${color}`} style={{ width: `${percent}%` }} />
       </div>
-      <p className="mt-2 text-right text-sm font-black text-white/60">{percent}% utilisé</p>
+      <p className="mt-3 text-right font-serif text-3xl font-black text-[#ffd38a]">{percent}%</p>
+      <p className="text-right text-sm font-bold text-white/45">détails en ouvrant le bloc</p>
     </div>
   );
 }
@@ -759,17 +765,18 @@ function LauncherHome({
             <button
               key={`${tile.label}-${tile.tab}`}
               onClick={() => onTabChange(tile.tab)}
-              className={`relative min-h-36 overflow-hidden rounded-[1.4rem] border ${tile.className} p-4 text-left text-white shadow-lg`}
+              className={`relative min-h-36 overflow-hidden rounded-[1.4rem] border ${tile.className} p-5 text-left text-white shadow-lg`}
             >
+              <span className="absolute right-4 bottom-4 text-[#ffd38a] [&_svg]:h-16 [&_svg]:w-16">
+                {tile.icon}
+              </span>
+              <span className="pointer-events-none absolute -bottom-10 -right-8 h-36 w-36 rounded-full bg-white/8" />
               <p className="relative z-10 text-2xl font-black leading-tight">{tile.label}</p>
               {tile.badge !== undefined && tile.badge !== 0 && (
-                <span className="absolute left-4 bottom-4 z-10 rounded-full bg-[#ffd38a] px-3 py-1.5 text-sm font-black text-[#151229]">
+                <span className="absolute left-4 bottom-4 z-10 min-w-9 rounded-full bg-[#ffd38a] px-3 py-1.5 text-center text-sm font-black text-[#151229]">
                   {tile.badge}
                 </span>
               )}
-              <span className="absolute -bottom-3 -right-3 rounded-full bg-white/10 p-8 text-[#ffd38a] [&_svg]:h-16 [&_svg]:w-16">
-                {tile.icon}
-              </span>
             </button>
           ))}
         </div>
