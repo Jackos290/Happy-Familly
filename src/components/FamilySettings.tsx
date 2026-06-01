@@ -34,6 +34,10 @@ export default function FamilySettings({ data, onDataChange, canEditPins = false
     });
   }
 
+  function updatePin(memberId: string, value: string) {
+    updateMember(memberId, { pinCode: value.replace(/\D/g, "").slice(0, 8) });
+  }
+
   return (
     <div className="grid gap-3 sm:grid-cols-2">
       {visibleMembers.map((member) => (
@@ -77,10 +81,11 @@ export default function FamilySettings({ data, onDataChange, canEditPins = false
               <span className="mb-1 block text-xs font-black uppercase tracking-[0.14em] text-slate-500">Code d'accès</span>
               <input
                 className="field"
-                value={member.pinCode ?? "1234"}
+                value={member.pinCode ?? ""}
+                placeholder="1234"
                 inputMode="numeric"
                 maxLength={8}
-                onChange={(event) => updateMember(member.id, { pinCode: event.target.value || "1234" })}
+                onChange={(event) => updatePin(member.id, event.target.value)}
                 aria-label={`Code d'accès de ${member.name}`}
               />
             </label>

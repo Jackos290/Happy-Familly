@@ -1577,8 +1577,8 @@ function PanelPinGate({
               {digit}
             </button>
           ))}
-          <button type="button" onClick={() => setPin((current) => current.slice(0, -1))} className="min-h-14 rounded-2xl bg-[#211d3d] text-lg font-black">
-            Effacer
+          <button type="button" onClick={() => setPin((current) => current.slice(0, -1))} className="min-h-14 rounded-2xl bg-[#211d3d] text-2xl font-black" title="Supprimer le dernier chiffre">
+            ⌫
           </button>
           <button type="button" onClick={() => addDigit("0")} className="min-h-14 rounded-2xl bg-[#34305a] text-xl font-black">
             0
