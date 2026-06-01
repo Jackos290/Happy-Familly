@@ -1,9 +1,9 @@
 ﻿import {
+  ArrowLeft,
   CalendarDays,
   CheckSquare,
   CloudSun,
   Expand,
-  Gift,
   Heart,
   Home,
   ListTodo,
@@ -41,7 +41,7 @@ type DashboardProps = {
 };
 
 type PanelId = "calendar" | "tasks" | "weather" | "shopping" | "budget" | "thanks";
-type PersonalTab = "home" | "calendar" | "tasks" | "todo" | "shopping" | "budget" | "weather" | "thanks";
+type PersonalTab = "home" | "calendar" | "tasks" | "todo" | "shopping" | "budget" | "screenTime" | "weather" | "thanks";
 
 type WakeLockSentinelLike = {
   release: () => Promise<void>;
@@ -118,6 +118,12 @@ export default function Dashboard({
     await document.documentElement.requestFullscreen().catch(() => undefined);
     setTabletModeActive(true);
     await requestWakeLock();
+  }
+
+  function keepFullscreen() {
+    if (!document.fullscreenElement) {
+      void document.documentElement.requestFullscreen().catch(() => undefined);
+    }
   }
 
   useEffect(() => {
@@ -234,7 +240,7 @@ export default function Dashboard({
   }
 
   return (
-    <main className="h-screen overflow-hidden bg-[#151229] px-3 py-3 text-white sm:px-5">
+    <main onPointerDownCapture={keepFullscreen} className="h-screen overflow-hidden bg-[#151229] px-3 py-3 text-white sm:px-5">
       <div className="mx-auto flex h-full max-w-[1600px] flex-col gap-3">
         <header className="flex min-h-[5.25rem] shrink-0 items-center justify-between gap-3 overflow-hidden rounded-[1.4rem] border border-[#3a3463] bg-[#1d1935] px-4 py-3 shadow-glass backdrop-blur-2xl lg:px-5">
           <div className="flex min-w-0 flex-1 items-center gap-3 overflow-hidden">
@@ -613,35 +619,23 @@ function PersonalApp({
   const isChild = isChildMember(data, memberId);
   const isHome = tab === "home";
 
+  function keepFullscreen() {
+    if (!document.fullscreenElement) {
+      void document.documentElement.requestFullscreen().catch(() => undefined);
+    }
+  }
+
   return (
-    <main className={`min-h-screen bg-[#151229] text-white ${isHome ? "pb-4" : "pb-28"}`}>
+    <main onPointerDownCapture={keepFullscreen} className="min-h-screen bg-[#151229] pb-4 text-white">
       <div className={`mx-auto flex max-w-3xl flex-col gap-4 px-4 ${isHome ? "py-4" : "py-4"}`}>
         {!isHome && (
-        <header className="sticky top-3 z-30 rounded-[1.5rem] border border-white/10 bg-white/10 p-3 shadow-glass backdrop-blur-2xl">
-          <div className="flex items-center gap-3">
-            <button onClick={onBackToChooser} className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 text-white" title="Changer d'espace">
-              <Home className="h-5 w-5" />
-            </button>
-            <div className="flex min-w-0 flex-1 items-center gap-3">
-              <span className="inline-flex h-12 w-12 shrink-0 overflow-hidden rounded-full bg-white shadow-sm">
-                {memberPhotoUrl ? (
-                  <img src={memberPhotoUrl} alt={memberName} className="h-full w-full object-cover" />
-                ) : (
-                  <span className={`flex h-full w-full items-center justify-center text-sm font-black ${memberColor}`}>
-                    {memberName.slice(0, 1).toUpperCase()}
-                  </span>
-                )}
-              </span>
-              <div className="min-w-0">
-                <p className="truncate text-xl font-black text-white">{memberName}</p>
-                <p className="truncate text-xs font-bold text-emerald-100/75">{syncStatus}</p>
-              </div>
-            </div>
-            <button onClick={onOpenSettings} className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 text-white" title="Options famille">
-              <Settings className="h-5 w-5" />
-            </button>
-          </div>
-        </header>
+          <button
+            onClick={() => onTabChange("home")}
+            className="sticky top-3 z-30 inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/10 text-white shadow-glass backdrop-blur-2xl"
+            title="Retour"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
         )}
 
         <section className={tab === "home" ? "" : "rounded-[1.75rem] border border-white/70 bg-white/90 p-4 text-slate-900 shadow-glass backdrop-blur-2xl"}>
@@ -649,47 +643,8 @@ function PersonalApp({
         </section>
       </div>
 
-      {!isHome && (
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#151229]/95 px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 shadow-glass backdrop-blur-2xl">
-        <div className="mx-auto grid max-w-3xl grid-cols-4 gap-1.5">
-          <PersonalNavButton active={false} icon={<Home />} label="Accueil" onClick={() => onTabChange("home")} />
-          <PersonalNavButton active={tab === "calendar"} icon={<CalendarDays />} label="Agenda" onClick={() => onTabChange("calendar")} />
-          <PersonalNavButton active={tab === "tasks"} icon={<CheckSquare />} label="Tâches" onClick={() => onTabChange("tasks")} />
-          {!isChild && <PersonalNavButton active={tab === "todo"} icon={<ListTodo />} label="Todo" onClick={() => onTabChange("todo")} />}
-          <PersonalNavButton active={tab === "shopping"} icon={<ShoppingBasket />} label="Courses" onClick={() => onTabChange("shopping")} />
-          <PersonalNavButton active={tab === "budget"} icon={<PiggyBank />} label={isChild ? "Temps" : "Budget"} onClick={() => onTabChange("budget")} />
-          <PersonalNavButton active={tab === "weather"} icon={<SunMedium />} label="Météo" onClick={() => onTabChange("weather")} />
-          <PersonalNavButton active={tab === "thanks"} icon={<Heart />} label="Merci" onClick={() => onTabChange("thanks")} />
-        </div>
-      </nav>
-      )}
-
       {children}
     </main>
-  );
-}
-
-function PersonalNavButton({
-  active,
-  icon,
-  label,
-  onClick,
-}: {
-  active: boolean;
-  icon: ReactNode;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-2xl px-1.5 py-1.5 text-[0.68rem] font-black transition [&_svg]:h-5 [&_svg]:w-5 ${
-        active ? "bg-[#3b3269] text-white" : "bg-white/10 text-white/60"
-      }`}
-    >
-      {icon}
-      {label}
-    </button>
   );
 }
 
@@ -720,10 +675,13 @@ function renderPersonalTab(
       return isChild ? (
         <ChildScreenTimePanel data={data} memberId={memberId} onDataChange={onDataChange} />
       ) : (
-        <div className="space-y-4">
-          <ParentScreenTimeManager data={data} onDataChange={onDataChange} />
-          <BudgetCard data={data} onDataChange={onDataChange} />
-        </div>
+        <BudgetCard data={data} onDataChange={onDataChange} />
+      );
+    case "screenTime":
+      return isChild ? (
+        <ChildScreenTimePanel data={data} memberId={memberId} onDataChange={onDataChange} />
+      ) : (
+        <ParentScreenTimeManager data={data} onDataChange={onDataChange} />
       );
     case "weather":
       return <WeatherCard weather={data.weather} />;
@@ -759,13 +717,14 @@ function LauncherHome({
     badge?: number | string;
     className: string;
   }> = [
-    { label: "Courses", tab: "shopping", icon: <ShoppingBasket />, badge: shoppingCount, className: "bg-[#211d3d] border-[#3a3463]" },
-    { label: "Calendrier", tab: "calendar", icon: <CalendarDays />, badge: calendarCount, className: "bg-[#241f43] border-[#4b4075]" },
-    { label: "Tâches", tab: "tasks", icon: <CheckSquare />, badge: todoTasks.length, className: "bg-[#211d3d] border-[#3a3463]" },
-    { label: isChild ? "Temps" : "Budget", tab: "budget", icon: isChild ? <TimerReset /> : <PiggyBank />, badge: isChild ? `${minutes}m` : undefined, className: "bg-[#2d2851] border-[#5f528a]" },
-    { label: isChild ? "Routines" : "Todo", tab: isChild ? "tasks" : "todo", icon: <ListTodo />, className: "bg-[#211d3d] border-[#3a3463]" },
-    { label: "Météo", tab: "weather", icon: <SunMedium />, badge: `${data.weather.temperature}°`, className: "bg-[#241f43] border-[#4b4075]" },
-    { label: "Merci", tab: "thanks", icon: <Heart />, badge: thanksCount, className: "bg-[#211d3d] border-[#3a3463]" },
+    { label: "Courses", tab: "shopping", icon: <ShoppingBasket />, badge: shoppingCount, className: "from-[#272247] to-[#1d1935] border-[#4b4075]" },
+    { label: "Calendrier", tab: "calendar", icon: <CalendarDays />, badge: calendarCount, className: "from-[#302957] to-[#211d3d] border-[#5f528a]" },
+    { label: "Tâches", tab: "tasks", icon: <CheckSquare />, badge: todoTasks.length, className: "from-[#272247] to-[#1d1935] border-[#4b4075]" },
+    { label: isChild ? "Temps" : "Budget", tab: "budget", icon: isChild ? <TimerReset /> : <PiggyBank />, badge: isChild ? `${minutes}m` : undefined, className: "from-[#342c5f] to-[#211d3d] border-[#6c5a98]" },
+    ...(!isChild ? [{ label: "Temps", tab: "screenTime" as PersonalTab, icon: <TimerReset />, className: "from-[#272247] to-[#1d1935] border-[#4b4075]" }] : []),
+    { label: isChild ? "Routines" : "Todo", tab: isChild ? "tasks" : "todo", icon: <ListTodo />, className: "from-[#272247] to-[#1d1935] border-[#4b4075]" },
+    { label: "Météo", tab: "weather", icon: <SunMedium />, badge: `${data.weather.temperature}°`, className: "from-[#302957] to-[#211d3d] border-[#5f528a]" },
+    { label: "Merci", tab: "thanks", icon: <Heart />, badge: thanksCount, className: "from-[#272247] to-[#1d1935] border-[#4b4075]" },
   ];
 
   return (
@@ -778,21 +737,24 @@ function LauncherHome({
       <section className="rounded-[2rem] border border-[#3a3463] bg-[#1d1935] p-4 backdrop-blur-xl">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-2xl font-black text-white">Mes applications</h2>
-          <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/10">
-            <Gift className="h-5 w-5" />
-          </span>
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {tiles.map((tile) => (
             <button
               key={`${tile.label}-${tile.tab}`}
-              onClick={() => onTabChange(tile.tab)}
-              className={`relative min-h-40 overflow-hidden rounded-[1.4rem] border ${tile.className} p-5 text-left text-white shadow-lg`}
+              onClick={() => {
+                if (!document.fullscreenElement) {
+                  void document.documentElement.requestFullscreen().catch(() => undefined);
+                }
+                onTabChange(tile.tab);
+              }}
+              className={`group relative min-h-40 overflow-hidden rounded-[1.5rem] border ${tile.className} bg-gradient-to-br p-5 text-left text-white shadow-lg transition hover:-translate-y-0.5 hover:border-[#ffd38a]`}
             >
-              <span className="absolute right-4 bottom-4 text-[#ffd38a] [&_svg]:h-16 [&_svg]:w-16">
+              <span className="pointer-events-none absolute -bottom-10 -right-8 h-36 w-36 rounded-full bg-white/10 transition group-hover:scale-110" />
+              <span className="pointer-events-none absolute -top-16 left-8 h-32 w-32 rounded-full bg-[#ffd38a]/10 blur-xl" />
+              <span className="absolute bottom-4 right-4 rounded-[1.25rem] bg-[#ffd38a]/10 p-3 text-[#ffd38a] [&_svg]:h-14 [&_svg]:w-14">
                 {tile.icon}
               </span>
-              <span className="pointer-events-none absolute -bottom-10 -right-8 h-36 w-36 rounded-full bg-white/8" />
               <p className="relative z-10 text-2xl font-black leading-tight">{tile.label}</p>
               {tile.badge !== undefined && tile.badge !== 0 && (
                 <span className="absolute left-4 bottom-4 z-10 min-w-9 rounded-full bg-[#ffd38a] px-3 py-1.5 text-center text-sm font-black text-[#151229]">
@@ -817,6 +779,8 @@ function ChildScreenTimePanel({
   onDataChange: (data: AppData) => void;
 }) {
   const [tab, setTab] = useState<"request" | "history" | "profile">("request");
+  const [pendingReward, setPendingReward] = useState<{ label: string; minutes: number } | null>(null);
+  const [funnyMessage, setFunnyMessage] = useState("");
   const member = data.familyMembers.find((item) => item.id === memberId);
   const minutes = getRewardMinutes(data, memberId);
   const todoTasks = data.tasks.filter((task) => task.personId === memberId && !task.done);
@@ -835,8 +799,14 @@ function ChildScreenTimePanel({
     addScreenTimeRequest(button.label, button.minutes, "spend");
   }
 
+  function confirmReward(label: string, rewardMinutes: number) {
+    setPendingReward({ label, minutes: rewardMinutes });
+  }
+
   function requestReward(label: string, rewardMinutes: number) {
     addScreenTimeRequest(label, rewardMinutes, "reward");
+    setPendingReward(null);
+    setFunnyMessage(getRandomKidMessage());
   }
 
   function addScreenTimeRequest(label: string, requestMinutes: number, kind: "reward" | "spend") {
@@ -881,6 +851,11 @@ function ChildScreenTimePanel({
 
       {tab === "request" && (
         <div className="space-y-6">
+          {funnyMessage && (
+            <div className="rounded-2xl border border-[#83efb2] bg-[#203c35] px-4 py-3 text-sm font-black text-[#83efb2]">
+              {funnyMessage}
+            </div>
+          )}
           <RewardSection title="🔥 J'ai fait une tâche">
             {todoTasks.map((task) => (
               <RewardTile
@@ -889,7 +864,7 @@ function ChildScreenTimePanel({
                 title={task.title}
                 minutes={`+${task.rewardMinutes ?? 0} min`}
                 tone="green"
-                onClick={() => requestReward(task.title, task.rewardMinutes ?? 0)}
+                onClick={() => confirmReward(task.title, task.rewardMinutes ?? 0)}
               />
             ))}
             {CHILD_TASK_TEMPLATES.map((task) => (
@@ -899,7 +874,7 @@ function ChildScreenTimePanel({
                 title={task.title}
                 minutes={task.minutesLabel}
                 tone="green"
-                onClick={() => requestReward(task.title, task.minutes)}
+                onClick={() => confirmReward(task.title, task.minutes)}
               />
             ))}
           </RewardSection>
@@ -998,6 +973,15 @@ function ChildScreenTimePanel({
           <TaskBoard data={data} onDataChange={onDataChange} selectedMemberId={memberId} expanded />
         </div>
       </div>
+
+      {pendingReward && (
+        <ConfirmTaskModal
+          label={pendingReward.label}
+          minutes={pendingReward.minutes}
+          onCancel={() => setPendingReward(null)}
+          onConfirm={() => requestReward(pendingReward.label, pendingReward.minutes)}
+        />
+      )}
     </div>
   );
 }
@@ -1028,6 +1012,23 @@ function ParentScreenTimeManager({ data, onDataChange }: { data: AppData; onData
             },
           ]
         : data.screenTimeTransactions,
+    });
+  }
+
+  function addBonus(childId: string, minutes: number) {
+    onDataChange({
+      ...data,
+      screenTimeTransactions: [
+        ...(data.screenTimeTransactions ?? []),
+        {
+          id: createId("screen-transaction"),
+          childId,
+          label: `Bonus parent ${minutes} min`,
+          minutes,
+          createdAt: new Date().toISOString(),
+          type: "manual",
+        },
+      ],
     });
   }
 
@@ -1100,6 +1101,18 @@ function ParentScreenTimeManager({ data, onDataChange }: { data: AppData; onData
               <AvatarBubble member={child} size="lg" />
               <p className="mt-2 font-black">{child.name}</p>
               <p className="font-serif text-3xl font-black text-[#ffd38a]">{formatMinutesAsTime(getRewardMinutes(data, child.id))}</p>
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                {PARENT_BONUS_BUTTONS.map((bonus) => (
+                  <button
+                    key={`${child.id}-${bonus.minutes}`}
+                    type="button"
+                    onClick={() => addBonus(child.id, bonus.minutes)}
+                    className="rounded-xl bg-[#83efb2] px-2 py-2 text-xs font-black text-[#151229]"
+                  >
+                    +{bonus.label}
+                  </button>
+                ))}
+              </div>
             </div>
           ))}
         </div>
@@ -1148,6 +1161,41 @@ function ScreenRequestHistoryItem({ request }: { request: NonNullable<AppData["s
   );
 }
 
+function ConfirmTaskModal({
+  label,
+  minutes,
+  onCancel,
+  onConfirm,
+}: {
+  label: string;
+  minutes: number;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#151229]/85 p-4 backdrop-blur-sm">
+      <section className="w-full max-w-sm rounded-[2rem] border border-[#3a3463] bg-[#1d1935] p-5 text-white shadow-glass">
+        <button onClick={onCancel} className="ml-auto flex h-10 w-10 items-center justify-center rounded-2xl bg-[#34305a]" title="Fermer">
+          <X className="h-5 w-5" />
+        </button>
+        <p className="mt-2 font-serif text-xl font-black italic text-[#ffd38a]">Petite vérification</p>
+        <h2 className="mt-2 text-2xl font-black">As-tu fait cette tâche correctement ?</h2>
+        <p className="mt-3 rounded-2xl border border-[#3a3463] bg-[#211d3d] px-4 py-3 font-black">
+          {label} · +{minutes} min
+        </p>
+        <div className="mt-5 grid grid-cols-2 gap-3">
+          <button onClick={onCancel} className="min-h-12 rounded-2xl border border-[#ff7b72] bg-[#3a243a] font-black text-[#ff7b72]">
+            Pas encore
+          </button>
+          <button onClick={onConfirm} className="min-h-12 rounded-2xl bg-[#83efb2] font-black text-[#151229]">
+            Oui !
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 function LockKeyIcon() {
   return <span className="text-lg">🔐</span>;
 }
@@ -1166,6 +1214,34 @@ const SPEND_BUTTONS: SpendButton[] = [
   { label: "1 heure", minutes: 60, icon: "🎮" },
   { label: "2 heures", minutes: 120, icon: "🎮" },
 ];
+
+const PARENT_BONUS_BUTTONS = [
+  { label: "30 min", minutes: 30 },
+  { label: "1h", minutes: 60 },
+  { label: "2h", minutes: 120 },
+];
+
+const KID_SUCCESS_MESSAGES = [
+  "Demande envoyée ! Les parents vont inspecter ça comme des experts du canapé.",
+  "Bravo ! Une mission de plus dans la poche.",
+  "Top ! Le comité parental va étudier ton exploit.",
+  "Bien joué ! Même ton cartable est impressionné.",
+  "Hop, demande envoyée. Ça sent le bonus mérité.",
+  "Mission accomplie ! Tu peux faire une mini danse de victoire.",
+  "Super boulot ! Les parents vont recevoir la preuve de ton courage.",
+  "Ça part chez les parents. Suspense, tambours, confettis imaginaires.",
+  "Bravo champion ! La demande file plus vite qu’une chaussette perdue.",
+  "Très propre ! Les parents vont valider si tout brille.",
+  "Demande envoyée. Ton futur temps d’écran croise les doigts.",
+  "Waouh ! Même la table applaudit en silence.",
+  "Bien joué ! Tu viens de gagner des points de sérieux.",
+  "Mission envoyée au quartier général des parents.",
+  "Nickel ! Le bonus est en route vers la validation.",
+];
+
+function getRandomKidMessage() {
+  return KID_SUCCESS_MESSAGES[Math.floor(Math.random() * KID_SUCCESS_MESSAGES.length)];
+}
 
 const CHILD_TASK_TEMPLATES = [
   { icon: "🛏️", title: "Faire son lit", minutes: 5, minutesLabel: "+5 min" },

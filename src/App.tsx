@@ -194,7 +194,7 @@ export default function App() {
   if (!accessChoice) {
     return (
       <AppErrorBoundary>
-        <AccessChooser data={data} onChoose={handleAccessChoice} syncStatus={syncStatus} />
+        <AccessChooser data={data} onChoose={handleAccessChoice} onDataChange={handleDataChange} syncStatus={syncStatus} />
         {pendingMember && (
           <PinGate
             memberName={pendingMember.name}
