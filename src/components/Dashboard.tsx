@@ -493,23 +493,52 @@ function ShoppingSummary({ data }: { data: AppData }) {
 }
 
 function BudgetSummary({ data }: { data: AppData }) {
-  const recurringTotal = (data.budget.recurringExpenses ?? []).reduce((total, expense) => total + expense.amount, 0);
-  const spent = data.budget.expenses.reduce((total, expense) => total + expense.amount, 0) + recurringTotal;
-  const incomeTotal = Object.values(data.budget.parentIncomes ?? {}).reduce((total, value) => total + value, 0) + (data.budget.jointAccountStart ?? 0);
-  const total = incomeTotal || data.budget.monthlyTotal || 1;
-  const percent = Math.min(100, Math.round((spent / total) * 100));
-  const color = percent < 70 ? "bg-emerald-500" : percent < 90 ? "bg-amber-500" : "bg-rose-500";
+  const parents = data.familyMembers.slice(0, 2);
+  const accounts = [
+    ...parents.map((parent) => ({
+      id: parent.id,
+      label: parent.name,
+      start: data.budget.parentIncomes?.[parent.id] ?? 0,
+    })),
+    {
+      id: "joint",
+      label: "Joint",
+      start: data.budget.jointAccountStart ?? 0,
+    },
+  ];
 
   return (
-    <div className="flex h-full flex-col justify-center rounded-3xl border border-[#3a3463] bg-[#17142c] p-4">
-      <p className="text-xs font-black uppercase tracking-[0.16em] text-white/45">Budget mensuel</p>
-      <div className="mt-4 h-7 overflow-hidden rounded-full bg-[#34305a]">
-        <div className={`h-full rounded-full ${color}`} style={{ width: `${percent}%` }} />
-      </div>
-      <p className="mt-3 text-right font-serif text-3xl font-black text-[#ffd38a]">{percent}%</p>
-      <p className="text-right text-sm font-bold text-white/45">détails en ouvrant le bloc</p>
+    <div className="flex h-full flex-col justify-center gap-2 rounded-3xl border border-[#3a3463] bg-[#17142c] p-4">
+      <p className="text-xs font-black uppercase tracking-[0.16em] text-white/45">Budget par compte</p>
+      {accounts.map((account) => {
+        const spent = getAccountSpent(data, account.id);
+        const total = account.start || (account.id === "joint" ? data.budget.monthlyTotal || 1 : 1);
+        const percent = Math.max(0, Math.min(100, Math.round((spent / total) * 100)));
+        const color = percent < 70 ? "bg-emerald-500" : percent < 90 ? "bg-amber-500" : "bg-rose-500";
+
+        return (
+          <div key={account.id}>
+            <div className="mb-1 flex items-center justify-between gap-2 text-xs font-black text-white/65">
+              <span className="truncate">{account.label}</span>
+              <span>{percent}%</span>
+            </div>
+            <div className="h-4 overflow-hidden rounded-full bg-[#34305a]">
+              <div className={`h-full rounded-full ${color}`} style={{ width: `${percent}%` }} />
+            </div>
+          </div>
+        );
+      })}
+      <p className="text-right text-xs font-bold text-white/45">détails en ouvrant le bloc</p>
     </div>
   );
+}
+
+function getAccountSpent(data: AppData, accountId: string) {
+  const monthly = data.budget.expenses ?? [];
+  const recurring = data.budget.recurringExpenses ?? [];
+  return [...monthly, ...recurring]
+    .filter((expense) => (expense.accountId ?? "joint") === accountId)
+    .reduce((total, expense) => total + expense.amount, 0);
 }
 
 function RewardSummary({ data, memberId }: { data: AppData; memberId: string }) {

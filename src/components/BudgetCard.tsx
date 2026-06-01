@@ -23,10 +23,12 @@ export default function BudgetCard({ data, onDataChange }: Props) {
   const [amount, setAmount] = useState("");
   const [dateISO, setDateISO] = useState(toISODate(new Date()));
   const [transactionType, setTransactionType] = useState<"expense" | "income">("expense");
+  const [accountId, setAccountId] = useState("joint");
   const [recurring, setRecurring] = useState(false);
   const [movementLabel, setMovementLabel] = useState("");
   const [movementAmount, setMovementAmount] = useState("");
   const [movementDateISO, setMovementDateISO] = useState(toISODate(new Date()));
+  const [movementAccountId, setMovementAccountId] = useState("joint");
 
   const budget = useMemo(() => {
     const income = parents.reduce((total, parent) => total + (parentIncomes[parent.id] ?? 0), 0) + jointAccountStart;
@@ -34,7 +36,7 @@ export default function BudgetCard({ data, onDataChange }: Props) {
     const recurringTotal = recurringExpenses.reduce((total, expense) => total + expense.amount, 0);
     const total = income > 0 ? income : data.budget.monthlyTotal;
     const spent = expenseTotal + recurringTotal;
-    const percent = total > 0 ? Math.min((spent / total) * 100, 100) : 0;
+    const percent = total > 0 ? Math.max(0, Math.min((spent / total) * 100, 100)) : 0;
     const remaining = total - spent;
     const color = percent < 70 ? "bg-emerald-500" : percent <= 90 ? "bg-orange-500" : "bg-rose-600";
 
@@ -73,7 +75,7 @@ export default function BudgetCard({ data, onDataChange }: Props) {
     if (!label.trim() || Number.isNaN(parsedAmount) || parsedAmount <= 0) return;
 
     const signedAmount = transactionType === "income" ? -parsedAmount : parsedAmount;
-    const expense: Expense = { id: createId("expense"), label: label.trim(), amount: signedAmount, dateISO, recurring, type: transactionType };
+    const expense: Expense = { id: createId("expense"), label: label.trim(), amount: signedAmount, accountId, dateISO, recurring, type: transactionType };
     onDataChange({
       ...data,
       budget: {
@@ -86,6 +88,7 @@ export default function BudgetCard({ data, onDataChange }: Props) {
     setAmount("");
     setDateISO(toISODate(new Date()));
     setTransactionType("expense");
+    setAccountId("joint");
     setRecurring(false);
   }
 
@@ -103,6 +106,7 @@ export default function BudgetCard({ data, onDataChange }: Props) {
             id: createId("movement"),
             label: movementLabel.trim(),
             amount: signedAmount,
+            accountId: movementAccountId,
             dateISO: movementDateISO,
             type: type === "add" ? "income" : "expense",
           },
@@ -112,6 +116,7 @@ export default function BudgetCard({ data, onDataChange }: Props) {
     setMovementLabel("");
     setMovementAmount("");
     setMovementDateISO(toISODate(new Date()));
+    setMovementAccountId("joint");
   }
 
   function deleteExpense(expenseId: string, list: "monthly" | "recurring") {
@@ -157,11 +162,12 @@ export default function BudgetCard({ data, onDataChange }: Props) {
         </label>
       </div>
 
-      <form onSubmit={addExpense} className="grid grid-cols-1 gap-3 rounded-3xl border border-[#3a3463] bg-[#17142c] p-3 xl:grid-cols-[160px_minmax(0,1fr)_110px_150px_160px_56px]">
+      <form onSubmit={addExpense} className="grid grid-cols-1 gap-3 rounded-3xl border border-[#3a3463] bg-[#17142c] p-3 xl:grid-cols-[160px_150px_minmax(0,1fr)_110px_150px_160px_56px]">
         <select className="field" value={transactionType} onChange={(event) => setTransactionType(event.target.value as "expense" | "income")}>
           <option value="expense">Nouvelle dépense</option>
           <option value="income">Nouvelle rentrée</option>
         </select>
+        <AccountSelect parents={parents} value={accountId} onChange={setAccountId} />
         <input className="field" value={label} onChange={(event) => setLabel(event.target.value)} placeholder={transactionType === "income" ? "Nom de la rentrée" : "Nom de la dépense"} />
         <input className="field" type="number" min="0" step="1" value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="€" />
         <input className="field" type="date" value={dateISO} onChange={(event) => setDateISO(event.target.value)} aria-label="Date de débit" />
@@ -174,10 +180,11 @@ export default function BudgetCard({ data, onDataChange }: Props) {
         </button>
       </form>
 
-      <div className="grid gap-3 rounded-3xl border border-[#3a3463] bg-[#17142c] p-3 sm:grid-cols-[minmax(0,1fr)_110px_150px_auto_auto]">
+      <div className="grid gap-3 rounded-3xl border border-[#3a3463] bg-[#17142c] p-3 sm:grid-cols-[minmax(0,1fr)_110px_150px_150px_auto_auto]">
         <input className="field" value={movementLabel} onChange={(event) => setMovementLabel(event.target.value)} placeholder="Mouvement d'argent" />
         <input className="field" type="number" min="0" value={movementAmount} onChange={(event) => setMovementAmount(event.target.value)} placeholder="€" />
         <input className="field" type="date" value={movementDateISO} onChange={(event) => setMovementDateISO(event.target.value)} aria-label="Date du mouvement" />
+        <AccountSelect parents={parents} value={movementAccountId} onChange={setMovementAccountId} />
         <button type="button" onClick={() => addMovement("add")} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-emerald-400 px-4 font-black text-[#151229]">
           <Plus className="h-4 w-4" /> Ajouter
         </button>
@@ -186,8 +193,8 @@ export default function BudgetCard({ data, onDataChange }: Props) {
         </button>
       </div>
 
-      <ExpenseList title="Dépenses du mois" expenses={data.budget.expenses} onDelete={(id) => deleteExpense(id, "monthly")} />
-      <ExpenseList title="Dépenses récurrentes" expenses={recurringExpenses} onDelete={(id) => deleteExpense(id, "recurring")} />
+      <ExpenseList title="Dépenses du mois" expenses={data.budget.expenses} parents={parents} onDelete={(id) => deleteExpense(id, "monthly")} />
+      <ExpenseList title="Dépenses récurrentes" expenses={recurringExpenses} parents={parents} onDelete={(id) => deleteExpense(id, "recurring")} />
     </div>
   );
 }
@@ -196,7 +203,20 @@ function calculateMonthlyTotal(parentIncomes: Record<string, number>, jointAccou
   return Object.values(parentIncomes).reduce((total, value) => total + value, 0) + jointAccountStart;
 }
 
-function ExpenseList({ title, expenses, onDelete }: { title: string; expenses: Expense[]; onDelete: (id: string) => void }) {
+function AccountSelect({ parents, value, onChange }: { parents: AppData["familyMembers"]; value: string; onChange: (value: string) => void }) {
+  return (
+    <select className="field" value={value} onChange={(event) => onChange(event.target.value)} aria-label="Compte">
+      {parents.map((parent) => (
+        <option key={parent.id} value={parent.id}>
+          {parent.name}
+        </option>
+      ))}
+      <option value="joint">Compte joint</option>
+    </select>
+  );
+}
+
+function ExpenseList({ title, expenses, parents, onDelete }: { title: string; expenses: Expense[]; parents: AppData["familyMembers"]; onDelete: (id: string) => void }) {
   return (
     <div>
       <h3 className="mb-2 font-black text-white">{title}</h3>
@@ -205,6 +225,7 @@ function ExpenseList({ title, expenses, onDelete }: { title: string; expenses: E
           <div key={expense.id} className="flex items-center justify-between rounded-2xl border border-[#3a3463] bg-[#211d3d] px-4 py-3">
             <span className="min-w-0">
               <span className="block truncate font-semibold text-white/80">{expense.label}</span>
+              <span className="block text-xs font-bold text-white/45">{getAccountLabel(expense.accountId, parents)}</span>
               {expense.dateISO && <span className="block text-xs font-bold text-white/45">Débit le {formatDate(expense.dateISO)}</span>}
             </span>
             <div className="flex shrink-0 items-center gap-2">
@@ -224,6 +245,11 @@ function ExpenseList({ title, expenses, onDelete }: { title: string; expenses: E
       </div>
     </div>
   );
+}
+
+function getAccountLabel(accountId: string | undefined, parents: AppData["familyMembers"]) {
+  if (!accountId || accountId === "joint") return "Compte joint";
+  return parents.find((parent) => parent.id === accountId)?.name ?? "Compte joint";
 }
 
 function Metric({ label, value }: { label: string; value: string }) {
