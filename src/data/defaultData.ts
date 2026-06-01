@@ -75,4 +75,6 @@ export const defaultData: AppData = {
       ],
     },
   ],
+  screenTimeRequests: [],
+  screenTimeTransactions: [],
 };

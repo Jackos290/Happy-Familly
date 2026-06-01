@@ -1,4 +1,4 @@
-import { LayoutDashboard, RefreshCw, UserRound } from "lucide-react";
+import { LayoutDashboard, LockKeyhole, RefreshCw, UserRound } from "lucide-react";
 import type { AppData } from "../types";
 
 export type AccessChoice =
@@ -12,40 +12,33 @@ type Props = {
 };
 
 export default function AccessChooser({ data, syncStatus, onChoose }: Props) {
+  const children = data.familyMembers.slice(2);
+  const parents = data.familyMembers.slice(0, 2);
+
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,#e0f2fe_0,#f8fafc_34%,#fff7ed_72%,#f8fafc_100%)] px-5 py-6 text-slate-950">
-      <section className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-5xl flex-col justify-center gap-8">
-        <div className="rounded-[2rem] border border-white/70 bg-white/65 p-6 shadow-glass backdrop-blur-2xl sm:p-8">
+    <main className="min-h-screen bg-[#151229] px-5 py-6 text-white">
+      <section className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-4xl flex-col justify-center gap-8">
+        <div className="rounded-[2rem] border border-[#3a3463] bg-[#1d1935] p-6 shadow-glass backdrop-blur-2xl sm:p-8">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <p className="text-sm font-black uppercase tracking-[0.28em] text-sky-700">Happy Familly</p>
-              <h1 className="mt-3 text-3xl font-black tracking-tight sm:text-5xl">Qui utilise l'application ?</h1>
+              <p className="font-serif text-lg font-black italic text-[#ffd38a]">Famille</p>
+              <h1 className="mt-3 font-serif text-4xl font-black italic tracking-tight sm:text-6xl">Qui es-tu ?</h1>
+              <p className="mt-2 text-sm font-bold text-white/65">Choisis ton profil pour commencer</p>
             </div>
-            <span className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-600">
+            <span className="inline-flex items-center gap-2 rounded-full border border-[#3a3463] bg-[#17142c] px-4 py-2 text-sm font-semibold text-white/70">
               <RefreshCw className="h-4 w-4" />
               {syncStatus}
             </span>
           </div>
 
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <button
-              onClick={() => onChoose({ type: "dashboard" })}
-              className="min-h-44 rounded-[1.5rem] bg-slate-950 p-5 text-left text-white shadow-glass transition hover:-translate-y-0.5 hover:bg-slate-800"
-            >
-              <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-slate-950">
-                <LayoutDashboard className="h-7 w-7" />
-              </span>
-              <span className="mt-6 block text-2xl font-black">Dashboard salon</span>
-              <span className="mt-2 block text-sm font-semibold text-slate-300">Vue complète pour la tablette.</span>
-            </button>
-
-            {data.familyMembers.map((member) => (
+          <div className="mt-8 grid gap-4 sm:grid-cols-2">
+            {children.map((member) => (
               <button
                 key={member.id}
                 onClick={() => onChoose({ type: "member", memberId: member.id })}
-                className="min-h-44 rounded-[1.5rem] border border-white/80 bg-white/75 p-5 text-left shadow-sm backdrop-blur-xl transition hover:-translate-y-0.5 hover:bg-white"
+                className="relative min-h-44 rounded-[1.5rem] border border-[#3a3463] bg-[#211d3d] p-5 text-center shadow-sm backdrop-blur-xl transition hover:-translate-y-0.5 hover:border-[#83efb2]"
               >
-                <span className="inline-flex h-16 w-16 overflow-hidden rounded-full bg-slate-100 shadow-sm">
+                <span className="mx-auto inline-flex h-20 w-20 overflow-hidden rounded-full bg-[#34305a] shadow-sm">
                   {member.photoUrl ? (
                     <img src={member.photoUrl} alt={member.name} className="h-full w-full object-cover" />
                   ) : (
@@ -54,8 +47,39 @@ export default function AccessChooser({ data, syncStatus, onChoose }: Props) {
                     </span>
                   )}
                 </span>
-                <span className="mt-5 block text-2xl font-black">{member.name}</span>
-                <span className="mt-2 block text-sm font-semibold text-slate-500">Tâches, rendez-vous et suivi personnel.</span>
+                <span className="mt-5 block text-xl font-black">{member.name}</span>
+                <span className="mt-1 block font-serif text-sm font-black italic text-[#ffd38a]">Espace enfant</span>
+              </button>
+            ))}
+
+            <button
+              onClick={() => onChoose({ type: "dashboard" })}
+              className="rounded-[1.5rem] border border-[#3a3463] bg-[#211d3d] p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-[#ffd38a] sm:col-span-2"
+            >
+              <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[#34305a] text-[#ffd38a]">
+                <LayoutDashboard className="h-6 w-6" />
+              </span>
+              <span className="ml-4 align-middle text-xl font-black">Dashboard salon</span>
+              <span className="mt-2 block text-sm font-semibold text-white/50">Vue complète pour la tablette.</span>
+            </button>
+
+            {parents.map((member) => (
+              <button
+                key={member.id}
+                onClick={() => onChoose({ type: "member", memberId: member.id })}
+                className="rounded-[1.5rem] border border-[#3a3463] bg-[#211d3d] p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-[#ffd38a]"
+              >
+                <span className="inline-flex h-12 w-12 overflow-hidden rounded-full bg-[#34305a]">
+                  {member.photoUrl ? (
+                    <img src={member.photoUrl} alt={member.name} className="h-full w-full object-cover" />
+                  ) : (
+                    <span className={`flex h-full w-full items-center justify-center ${member.color}`}>
+                      <LockKeyhole className="h-5 w-5" />
+                    </span>
+                  )}
+                </span>
+                <span className="ml-4 align-middle text-xl font-black">{member.name}</span>
+                <span className="mt-2 block text-sm font-semibold text-white/50">Espace parent</span>
               </button>
             ))}
           </div>

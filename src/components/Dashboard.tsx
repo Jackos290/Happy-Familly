@@ -1,7 +1,6 @@
 ﻿import {
   CalendarDays,
   CheckSquare,
-  CheckCircle2,
   CloudSun,
   Expand,
   Gift,
@@ -19,6 +18,7 @@
 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { AppData } from "../types";
+import { createId } from "../utils/localStorage";
 import type { HourlyForecast } from "../utils/weather";
 import { fetchGorcyForecast } from "../utils/weather";
 import BudgetCard from "./BudgetCard";
@@ -583,7 +583,7 @@ function PersonalApp({
   const isChild = isChildMember(data, memberId);
 
   return (
-    <main className="min-h-screen bg-[#0d3028] pb-28 text-white">
+    <main className="min-h-screen bg-[#151229] pb-28 text-white">
       <div className="mx-auto flex max-w-3xl flex-col gap-4 px-4 py-4">
         <header className="sticky top-3 z-30 rounded-[1.5rem] border border-white/10 bg-white/10 p-3 shadow-glass backdrop-blur-2xl">
           <div className="flex items-center gap-3">
@@ -616,7 +616,7 @@ function PersonalApp({
         </section>
       </div>
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#123c33]/95 px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 shadow-glass backdrop-blur-2xl">
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#151229]/95 px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 shadow-glass backdrop-blur-2xl">
         <div className="mx-auto grid max-w-3xl grid-cols-4 gap-1.5">
           <PersonalNavButton active={tab === "home"} icon={<Home />} label="Accueil" onClick={() => onTabChange("home")} />
           <PersonalNavButton active={tab === "calendar"} icon={<CalendarDays />} label="Agenda" onClick={() => onTabChange("calendar")} />
@@ -649,7 +649,7 @@ function PersonalNavButton({
     <button
       onClick={onClick}
       className={`flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-2xl px-1.5 py-1.5 text-[0.68rem] font-black transition [&_svg]:h-5 [&_svg]:w-5 ${
-        active ? "bg-white text-[#0d3028]" : "bg-white/10 text-white/60"
+        active ? "bg-[#3b3269] text-white" : "bg-white/10 text-white/60"
       }`}
     >
       {icon}
@@ -682,7 +682,14 @@ function renderPersonalTab(
     case "shopping":
       return <ShoppingList data={data} onDataChange={onDataChange} expanded />;
     case "budget":
-      return isChild ? <ChildScreenTimePanel data={data} memberId={memberId} onDataChange={onDataChange} /> : <BudgetCard data={data} onDataChange={onDataChange} />;
+      return isChild ? (
+        <ChildScreenTimePanel data={data} memberId={memberId} onDataChange={onDataChange} />
+      ) : (
+        <div className="space-y-4">
+          <ParentScreenTimeManager data={data} onDataChange={onDataChange} />
+          <BudgetCard data={data} onDataChange={onDataChange} />
+        </div>
+      );
     case "weather":
       return <WeatherCard weather={data.weather} />;
     case "thanks":
@@ -717,30 +724,30 @@ function LauncherHome({
     badge?: number | string;
     className: string;
   }> = [
-    { label: "Courses", tab: "shopping", icon: <ShoppingBasket />, badge: shoppingCount, className: "from-emerald-200 to-cyan-100" },
-    { label: "Calendrier", tab: "calendar", icon: <CalendarDays />, badge: calendarCount, className: "from-amber-200 to-yellow-100" },
-    { label: "Tâches", tab: "tasks", icon: <CheckSquare />, badge: todoTasks.length, className: "from-teal-200 to-emerald-100" },
-    { label: isChild ? "Temps" : "Budget", tab: "budget", icon: isChild ? <TimerReset /> : <PiggyBank />, badge: isChild ? `${minutes}m` : undefined, className: "from-rose-200 to-orange-100" },
-    { label: isChild ? "Routines" : "Todo", tab: isChild ? "tasks" : "todo", icon: <ListTodo />, className: "from-sky-200 to-cyan-100" },
-    { label: "Météo", tab: "weather", icon: <SunMedium />, badge: `${data.weather.temperature}°`, className: "from-yellow-200 to-orange-100" },
-    { label: "Merci", tab: "thanks", icon: <Heart />, badge: thanksCount, className: "from-pink-200 to-rose-100" },
+    { label: "Courses", tab: "shopping", icon: <ShoppingBasket />, badge: shoppingCount, className: "bg-[#211d3d] border-[#3a3463]" },
+    { label: "Calendrier", tab: "calendar", icon: <CalendarDays />, badge: calendarCount, className: "bg-[#241f43] border-[#4b4075]" },
+    { label: "Tâches", tab: "tasks", icon: <CheckSquare />, badge: todoTasks.length, className: "bg-[#211d3d] border-[#3a3463]" },
+    { label: isChild ? "Temps" : "Budget", tab: "budget", icon: isChild ? <TimerReset /> : <PiggyBank />, badge: isChild ? `${minutes}m` : undefined, className: "bg-[#2d2851] border-[#5f528a]" },
+    { label: isChild ? "Routines" : "Todo", tab: isChild ? "tasks" : "todo", icon: <ListTodo />, className: "bg-[#211d3d] border-[#3a3463]" },
+    { label: "Météo", tab: "weather", icon: <SunMedium />, badge: `${data.weather.temperature}°`, className: "bg-[#241f43] border-[#4b4075]" },
+    { label: "Merci", tab: "thanks", icon: <Heart />, badge: thanksCount, className: "bg-[#211d3d] border-[#3a3463]" },
   ];
 
   return (
     <div className="space-y-5">
       <div className="pt-2">
-        <p className="text-sm font-black uppercase tracking-[0.22em] text-emerald-100/70">Happy Family</p>
+        <p className="font-serif text-lg font-black italic text-[#ffd38a]">Famille</p>
         <h1 className="mt-2 text-4xl font-black leading-tight text-white">Bonjour {memberName}</h1>
         <button
           onClick={() => onTabChange("home")}
-          className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-lg font-bold text-white"
+          className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#2d2851] px-4 py-2 text-lg font-bold text-white"
         >
           <Home className="h-5 w-5" />
           Happy Family
         </button>
       </div>
 
-      <section className="rounded-[2rem] bg-white/10 p-4 backdrop-blur-xl">
+      <section className="rounded-[2rem] border border-[#3a3463] bg-[#1d1935] p-4 backdrop-blur-xl">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-2xl font-black text-white">Mes applications</h2>
           <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/10">
@@ -752,15 +759,15 @@ function LauncherHome({
             <button
               key={`${tile.label}-${tile.tab}`}
               onClick={() => onTabChange(tile.tab)}
-              className={`relative min-h-36 overflow-hidden rounded-[1.4rem] bg-gradient-to-br ${tile.className} p-4 text-left text-slate-950 shadow-lg`}
+              className={`relative min-h-36 overflow-hidden rounded-[1.4rem] border ${tile.className} p-4 text-left text-white shadow-lg`}
             >
               <p className="relative z-10 text-2xl font-black leading-tight">{tile.label}</p>
               {tile.badge !== undefined && tile.badge !== 0 && (
-                <span className="absolute left-4 bottom-4 z-10 rounded-full bg-white/50 px-3 py-1.5 text-sm font-black">
+                <span className="absolute left-4 bottom-4 z-10 rounded-full bg-[#ffd38a] px-3 py-1.5 text-sm font-black text-[#151229]">
                   {tile.badge}
                 </span>
               )}
-              <span className="absolute -bottom-3 -right-3 rounded-full bg-white/30 p-8 text-slate-900/75 [&_svg]:h-16 [&_svg]:w-16">
+              <span className="absolute -bottom-3 -right-3 rounded-full bg-white/10 p-8 text-[#ffd38a] [&_svg]:h-16 [&_svg]:w-16">
                 {tile.icon}
               </span>
             </button>
@@ -780,9 +787,13 @@ function ChildScreenTimePanel({
   memberId: string;
   onDataChange: (data: AppData) => void;
 }) {
+  const [tab, setTab] = useState<"request" | "history" | "profile">("request");
+  const member = data.familyMembers.find((item) => item.id === memberId);
   const minutes = getRewardMinutes(data, memberId);
   const todoTasks = data.tasks.filter((task) => task.personId === memberId && !task.done);
   const doneTasks = data.tasks.filter((task) => task.personId === memberId && task.done);
+  const requests = (data.screenTimeRequests ?? []).filter((request) => request.childId === memberId);
+  const transactions = (data.screenTimeTransactions ?? []).filter((transaction) => transaction.childId === memberId);
 
   function reactivateTask(taskId: string) {
     onDataChange({
@@ -791,60 +802,424 @@ function ChildScreenTimePanel({
     });
   }
 
+  function requestSpend(button: SpendButton) {
+    onDataChange({
+      ...data,
+      screenTimeRequests: [
+        ...(data.screenTimeRequests ?? []),
+        {
+          id: createId("screen-request"),
+          childId: memberId,
+          label: button.label,
+          minutes: button.minutes,
+          createdAt: new Date().toISOString(),
+          status: "pending",
+        },
+      ],
+    });
+  }
+
   return (
-    <div className="space-y-4">
-      <div className="rounded-[2rem] bg-[#123c33] p-5 text-white">
-        <p className="text-sm font-black uppercase tracking-[0.2em] text-emerald-100/70">Temps écran</p>
-        <div className="mt-4 flex items-end justify-between gap-3">
-          <div>
-            <p className="text-6xl font-black">{minutes}</p>
-            <p className="text-lg font-bold text-emerald-100/80">minutes disponibles</p>
-          </div>
-          <TimerReset className="h-14 w-14 text-amber-300" />
+    <div className="-m-4 min-h-[70vh] space-y-5 rounded-[1.75rem] bg-[#151229] p-4 text-white">
+      <div className="flex items-center gap-3">
+        <AvatarBubble member={member} size="lg" />
+        <div>
+          <p className="text-xs font-bold text-white/45">Coucou</p>
+          <p className="text-lg font-black">{member?.name ?? "Enfant"}</p>
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="rounded-3xl bg-white/70 p-4">
-          <h2 className="mb-3 flex items-center gap-2 text-lg font-black text-slate-950">
-            <CheckSquare className="h-5 w-5" />
-            À faire pour gagner du temps
-          </h2>
-          <div className="space-y-2">
-            {todoTasks.slice(0, 6).map((task) => (
-              <div key={task.id} className="rounded-2xl bg-white px-3 py-3 shadow-sm">
-                <p className="font-black text-slate-950">{task.title}</p>
-                <p className="mt-1 text-sm font-bold text-emerald-700">+{task.rewardMinutes ?? 0} min</p>
-              </div>
-            ))}
-            {todoTasks.length === 0 && <p className="text-sm font-bold text-slate-500">Plus rien à faire pour le moment.</p>}
-          </div>
-        </div>
+      <div className="rounded-[2rem] border border-[#3a3463] bg-[#2b2548] p-5 text-center shadow-glass">
+        <AvatarBubble member={member} size="xl" centered />
+        <p className="mt-4 text-xs font-bold text-white/55">tu peux jouer pendant</p>
+        <p className="font-serif text-6xl font-black text-[#ffd38a]">{formatMinutesAsTime(minutes)}</p>
+      </div>
 
-        <div className="rounded-3xl bg-white/70 p-4">
-          <h2 className="mb-3 flex items-center gap-2 text-lg font-black text-slate-950">
-            <CheckCircle2 className="h-5 w-5" />
-            Déjà gagnées
-          </h2>
-          <div className="space-y-2">
-            {doneTasks.slice(0, 6).map((task) => (
-              <button
+      <div className="grid grid-cols-3 gap-2 rounded-full border border-[#3a3463] bg-[#17142c] p-1">
+        <ScreenTab active={tab === "request"} onClick={() => setTab("request")}>⭐ Demander</ScreenTab>
+        <ScreenTab active={tab === "history"} onClick={() => setTab("history")}>📜 Historique</ScreenTab>
+        <ScreenTab active={tab === "profile"} onClick={() => setTab("profile")}>😍 Profil</ScreenTab>
+      </div>
+
+      {tab === "request" && (
+        <div className="space-y-6">
+          <RewardSection title="🔥 J'ai fait une tâche">
+            {todoTasks.map((task) => (
+              <RewardTile
                 key={task.id}
-                onClick={() => reactivateTask(task.id)}
-                className="w-full rounded-2xl bg-emerald-50 px-3 py-3 text-left shadow-sm"
-              >
-                <p className="font-black text-slate-950">{task.title}</p>
-                <p className="mt-1 text-sm font-bold text-emerald-700">+{task.rewardMinutes ?? 0} min · cliquer pour remettre à faire</p>
-              </button>
+                icon={guessTaskIcon(task.title)}
+                title={task.title}
+                minutes={`+${task.rewardMinutes ?? 0} min`}
+                tone="green"
+              />
             ))}
-            {doneTasks.length === 0 && <p className="text-sm font-bold text-slate-500">Aucune tâche validée.</p>}
+            {todoTasks.length === 0 && <EmptyScreenTile text="Aucune tâche à demander." />}
+          </RewardSection>
+
+          <RewardSection title="🌈 J'ai bien travaillé">
+            {DEFAULT_REWARDS.work.map((reward) => (
+              <RewardTile key={reward.title} {...reward} tone="amber" />
+            ))}
+          </RewardSection>
+
+          <RewardSection title="🎁 Bonus">
+            {DEFAULT_REWARDS.bonus.map((reward) => (
+              <RewardTile key={reward.title} {...reward} tone="red" />
+            ))}
+          </RewardSection>
+
+          <RewardSection title="🎮 Utiliser mon temps">
+            <div className="grid grid-cols-3 gap-2 sm:col-span-2">
+              {SPEND_BUTTONS.map((button) => (
+                <button
+                  key={button.label}
+                  onClick={() => requestSpend(button)}
+                  className="rounded-2xl border border-[#3a3463] bg-[#211d3d] px-3 py-4 text-center font-black text-white"
+                >
+                  <span className="block text-lg">{button.icon}</span>
+                  <span className="mt-1 block text-sm">{button.label}</span>
+                </button>
+              ))}
+            </div>
+            <p className="col-span-full text-center text-xs font-bold text-white/35">
+              Les parents doivent valider la demande avant que le temps soit déduit.
+            </p>
+          </RewardSection>
+        </div>
+      )}
+
+      {tab === "history" && (
+        <div className="space-y-3">
+          <ScreenListTitle icon="📨" title={`Demandes en attente (${requests.filter((request) => request.status === "pending").length})`} />
+          {requests.length === 0 && <EmptyScreenTile text="Aucune demande pour le moment." />}
+          {requests.map((request) => (
+            <div key={request.id} className="rounded-2xl border border-[#3a3463] bg-[#211d3d] p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="font-black">{request.label}</p>
+                  <p className="text-xs font-bold text-white/45">{formatShortDate(request.createdAt)} · {request.status}</p>
+                </div>
+                <p className="font-serif text-xl font-black text-[#ff7b72]">-{request.minutes} min</p>
+              </div>
+            </div>
+          ))}
+          <ScreenListTitle icon="✅" title="Temps gagné" />
+          {doneTasks.map((task) => (
+            <button key={task.id} onClick={() => reactivateTask(task.id)} className="w-full rounded-2xl border border-[#3a3463] bg-[#211d3d] p-4 text-left">
+              <p className="font-black">{task.title}</p>
+              <p className="font-serif text-xl font-black text-[#83efb2]">+{task.rewardMinutes ?? 0} min</p>
+            </button>
+          ))}
+          {transactions.map((transaction) => (
+            <div key={transaction.id} className="rounded-2xl border border-[#3a3463] bg-[#211d3d] p-4">
+              <p className="font-black">{transaction.label}</p>
+              <p className={`font-serif text-xl font-black ${transaction.minutes >= 0 ? "text-[#83efb2]" : "text-[#ff7b72]"}`}>
+                {transaction.minutes > 0 ? "+" : ""}{transaction.minutes} min
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {tab === "profile" && (
+        <div className="space-y-4 rounded-3xl border border-[#3a3463] bg-[#211d3d] p-4">
+          <ScreenListTitle icon="🔐" title="Profil enfant" />
+          <div className="rounded-2xl bg-[#312b57] p-4">
+            <AvatarBubble member={member} size="xl" />
+            <p className="mt-3 font-black">Photo de profil</p>
+            <p className="text-xs font-bold text-white/45">La photo se règle dans les options famille.</p>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="rounded-2xl border border-[#3a3463] bg-[#17142c] p-4">
+              <p className="text-xs font-bold text-white/45">Solde actuel</p>
+              <p className="font-serif text-3xl font-black text-[#ffd38a]">{formatMinutesAsTime(minutes)}</p>
+            </div>
+            <div className="rounded-2xl border border-[#3a3463] bg-[#17142c] p-4">
+              <p className="text-xs font-bold text-white/45">Tâches à faire</p>
+              <p className="text-3xl font-black text-white">{todoTasks.length}</p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      <TaskBoard data={data} onDataChange={onDataChange} selectedMemberId={memberId} expanded />
+      <div className="rounded-3xl border border-[#3a3463] bg-[#17142c] p-4">
+        <ScreenListTitle icon="🧩" title="Gestion des tâches enfant" />
+        <div className="mt-3 rounded-2xl bg-slate-50 p-3 text-slate-900">
+          <TaskBoard data={data} onDataChange={onDataChange} selectedMemberId={memberId} expanded />
+        </div>
+      </div>
     </div>
   );
+}
+
+function ParentScreenTimeManager({ data, onDataChange }: { data: AppData; onDataChange: (data: AppData) => void }) {
+  const [tab, setTab] = useState<"requests" | "rewards" | "spends" | "family">("requests");
+  const children = data.familyMembers.filter((member) => isChildMember(data, member.id));
+  const requests = data.screenTimeRequests ?? [];
+  const pendingRequests = requests.filter((request) => request.status === "pending");
+
+  function updateRequest(requestId: string, status: "approved" | "rejected") {
+    const request = requests.find((item) => item.id === requestId);
+    onDataChange({
+      ...data,
+      screenTimeRequests: requests.map((item) => (item.id === requestId ? { ...item, status } : item)),
+      screenTimeTransactions: status === "approved" && request
+        ? [
+            ...(data.screenTimeTransactions ?? []),
+            {
+              id: createId("screen-transaction"),
+              childId: request.childId,
+              label: request.label,
+              minutes: -request.minutes,
+              createdAt: new Date().toISOString(),
+              type: "spend",
+            },
+          ]
+        : data.screenTimeTransactions,
+    });
+  }
+
+  return (
+    <div className="-m-1 space-y-4 rounded-[1.75rem] bg-[#151229] p-4 text-white">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-[#34305a] text-[#ffd38a]">
+            <LockKeyIcon />
+          </span>
+          <div>
+            <p className="text-xs font-bold text-white/45">Espace</p>
+            <p className="text-lg font-black">Parent</p>
+          </div>
+        </div>
+        <p className="rounded-full border border-[#3a3463] px-3 py-1 text-xs font-black text-white/55">
+          {pendingRequests.length} demande(s)
+        </p>
+      </div>
+
+      <div className="grid grid-cols-4 gap-1 rounded-full border border-[#3a3463] bg-[#17142c] p-1">
+        <ScreenTab active={tab === "requests"} onClick={() => setTab("requests")}>🔔 Demandes</ScreenTab>
+        <ScreenTab active={tab === "rewards"} onClick={() => setTab("rewards")}>⚙️ Récompenses</ScreenTab>
+        <ScreenTab active={tab === "spends"} onClick={() => setTab("spends")}>🎮 Dépenses</ScreenTab>
+        <ScreenTab active={tab === "family"} onClick={() => setTab("family")}>👨‍👩‍👧‍👦 Famille</ScreenTab>
+      </div>
+
+      {tab === "requests" && (
+        <div className="space-y-3">
+          <p className="text-sm font-bold text-white/60">{pendingRequests.length} demande(s) en attente</p>
+          {pendingRequests.length === 0 && <EmptyScreenTile text="Aucune demande à valider." />}
+          {pendingRequests.map((request) => {
+            const child = data.familyMembers.find((member) => member.id === request.childId);
+            return (
+              <div key={request.id} className="rounded-2xl border border-[#3a3463] bg-[#211d3d] p-4">
+                <div className="flex items-center gap-3">
+                  <AvatarBubble member={child} size="lg" />
+                  <div>
+                    <p className="font-black">{child?.name ?? "Enfant"} 😎</p>
+                    <p className="text-xs font-bold text-white/45">Demande de dépense · {formatShortDate(request.createdAt)}</p>
+                  </div>
+                </div>
+                <div className="mt-3 flex items-center justify-between rounded-xl bg-[#312b57] px-3 py-3">
+                  <p className="font-black">{request.label}</p>
+                  <p className="font-serif text-xl font-black text-[#ff7b72]">-{request.minutes} min</p>
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <button onClick={() => updateRequest(request.id, "rejected")} className="rounded-xl border border-[#ff7b72] bg-[#3a243a] px-3 py-3 text-sm font-black text-[#ff7b72]">
+                    Examiner
+                  </button>
+                  <button onClick={() => updateRequest(request.id, "approved")} className="rounded-xl bg-[#83efb2] px-3 py-3 text-sm font-black text-[#151229]">
+                    ✓ Valider direct
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {tab === "rewards" && (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {children.map((child) => (
+            <div key={child.id} className="rounded-2xl border border-[#3a3463] bg-[#211d3d] p-4">
+              <AvatarBubble member={child} size="lg" />
+              <p className="mt-2 font-black">{child.name}</p>
+              <p className="font-serif text-3xl font-black text-[#ffd38a]">{formatMinutesAsTime(getRewardMinutes(data, child.id))}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {tab === "spends" && (
+        <div className="grid grid-cols-3 gap-2">
+          {SPEND_BUTTONS.map((button) => (
+            <div key={button.label} className="rounded-2xl border border-[#3a3463] bg-[#211d3d] p-4 text-center font-black">
+              <span className="block text-lg">{button.icon}</span>
+              {button.label}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {tab === "family" && (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {children.map((child) => (
+            <div key={child.id} className="rounded-2xl border border-[#3a3463] bg-[#211d3d] p-4">
+              <AvatarBubble member={child} size="lg" />
+              <p className="mt-2 font-black">{child.name}</p>
+              <p className="text-sm font-bold text-white/45">{data.tasks.filter((task) => task.personId === child.id && !task.done).length} tâche(s) à faire</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LockKeyIcon() {
+  return <span className="text-lg">🔐</span>;
+}
+
+type SpendButton = {
+  label: string;
+  minutes: number;
+  icon: string;
+};
+
+const SPEND_BUTTONS: SpendButton[] = [
+  { label: "5 min", minutes: 5, icon: "⏱️" },
+  { label: "15 min", minutes: 15, icon: "🧮" },
+  { label: "30 min", minutes: 30, icon: "📺" },
+  { label: "45 min", minutes: 45, icon: "📺" },
+  { label: "1 heure", minutes: 60, icon: "🎮" },
+  { label: "2 heures", minutes: 120, icon: "🎮" },
+];
+
+const DEFAULT_REWARDS = {
+  work: [
+    { icon: "📚", title: "Bonne note à l'école", minutes: "+15-30 min" },
+    { icon: "⭐", title: "Bonus", minutes: "+30-40 min" },
+    { icon: "🎒", title: "Faire son sac", minutes: "+10 min" },
+    { icon: "⏰", title: "Se lever tout seul", minutes: "+10 min" },
+    { icon: "📝", title: "Faire tous les devoirs d'un jour", minutes: "+20 min" },
+  ],
+  bonus: [
+    { icon: "⚽", title: "Entraînement sport", minutes: "+30-180 min" },
+    { icon: "⭐", title: "Bon match", minutes: "+30-180 min" },
+    { icon: "⭐", title: "Séance de sport", minutes: "+5-60 min" },
+  ],
+};
+
+function ScreenTab({
+  active,
+  children,
+  onClick,
+}: {
+  active: boolean;
+  children: ReactNode;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`min-h-10 rounded-full px-3 text-xs font-black transition ${
+        active ? "bg-[#3b3269] text-white" : "text-white/65"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function RewardSection({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section>
+      <h2 className="mb-3 font-serif text-lg font-black italic text-white">{title}</h2>
+      <div className="grid gap-2 sm:grid-cols-2">{children}</div>
+    </section>
+  );
+}
+
+function RewardTile({
+  icon,
+  title,
+  minutes,
+  tone,
+}: {
+  icon: string;
+  title: string;
+  minutes: string;
+  tone: "green" | "amber" | "red";
+}) {
+  const color = tone === "green" ? "text-[#83efb2]" : tone === "amber" ? "text-[#ffd38a]" : "text-[#ff7b72]";
+  return (
+    <div className="min-h-24 rounded-2xl border border-[#3a3463] bg-[#211d3d] p-4 shadow-sm">
+      <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[#34305a] text-lg">{icon}</span>
+      <p className="mt-2 line-clamp-2 text-sm font-black text-white">{title}</p>
+      <p className={`font-serif text-xl font-black italic ${color}`}>{minutes}</p>
+    </div>
+  );
+}
+
+function EmptyScreenTile({ text }: { text: string }) {
+  return (
+    <div className="rounded-2xl border border-dashed border-[#4a436f] bg-[#17142c] p-5 text-center text-sm font-bold text-white/45">
+      {text}
+    </div>
+  );
+}
+
+function ScreenListTitle({ icon, title }: { icon: string; title: string }) {
+  return (
+    <h2 className="flex items-center gap-2 font-serif text-lg font-black italic text-white">
+      <span>{icon}</span>
+      {title}
+    </h2>
+  );
+}
+
+function AvatarBubble({
+  member,
+  size = "md",
+  centered = false,
+}: {
+  member?: AppData["familyMembers"][number];
+  size?: "md" | "lg" | "xl";
+  centered?: boolean;
+}) {
+  const sizeClass = size === "xl" ? "h-20 w-20" : size === "lg" ? "h-12 w-12" : "h-10 w-10";
+  return (
+    <span className={`inline-flex ${sizeClass} overflow-hidden rounded-full bg-[#34305a] shadow-sm ${centered ? "mx-auto" : ""}`}>
+      {member?.photoUrl ? (
+        <img src={member.photoUrl} alt={member.name} className="h-full w-full object-cover" />
+      ) : (
+        <span className={`flex h-full w-full items-center justify-center text-sm font-black ${member?.color ?? "text-white"}`}>
+          {member?.name.slice(0, 1).toUpperCase() ?? "?"}
+        </span>
+      )}
+    </span>
+  );
+}
+
+function formatMinutesAsTime(minutes: number) {
+  const safeMinutes = Math.max(0, Math.round(minutes));
+  const hours = Math.floor(safeMinutes / 60);
+  const remaining = safeMinutes % 60;
+  return `${hours}h${String(remaining).padStart(2, "0")}`;
+}
+
+function formatShortDate(value: string) {
+  return new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" }).format(new Date(value));
+}
+
+function guessTaskIcon(title: string) {
+  const value = title.toLowerCase();
+  if (value.includes("lit")) return "🛏️";
+  if (value.includes("table")) return "🍽️";
+  if (value.includes("dent")) return "🪥";
+  if (value.includes("sac") || value.includes("cartable")) return "🎒";
+  if (value.includes("chambre")) return "🧹";
+  if (value.includes("pyjama")) return "👕";
+  if (value.includes("chauss")) return "🧦";
+  return "⭐";
 }
 
 function toISODate(date: Date) {
@@ -855,9 +1230,13 @@ function toISODate(date: Date) {
 }
 
 function getRewardMinutes(data: AppData, memberId: string) {
-  return data.tasks
+  const taskMinutes = data.tasks
     .filter((task) => task.personId === memberId && task.done)
     .reduce((total, task) => total + (task.rewardMinutes ?? 0), 0);
+  const transactionMinutes = (data.screenTimeTransactions ?? [])
+    .filter((transaction) => transaction.childId === memberId)
+    .reduce((total, transaction) => total + transaction.minutes, 0);
+  return Math.max(0, taskMinutes + transactionMinutes);
 }
 
 function getClothingAdvice(temperature: number, condition: "sun" | "rain") {

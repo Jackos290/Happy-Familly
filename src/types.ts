@@ -73,6 +73,24 @@ export type ParentTodoSection = {
   items: ParentTodoItem[];
 };
 
+export type ScreenTimeRequest = {
+  id: string;
+  childId: string;
+  label: string;
+  minutes: number;
+  createdAt: string;
+  status: "pending" | "approved" | "rejected";
+};
+
+export type ScreenTimeTransaction = {
+  id: string;
+  childId: string;
+  label: string;
+  minutes: number;
+  createdAt: string;
+  type: "reward" | "spend" | "manual";
+};
+
 export type AppData = {
   familyMembers: FamilyMember[];
   calendarEvents: CalendarEvent[];
@@ -83,4 +101,6 @@ export type AppData = {
   thanksMessages: ThanksMessage[];
   budget: FamilyBudget;
   parentTodoSections?: ParentTodoSection[];
+  screenTimeRequests?: ScreenTimeRequest[];
+  screenTimeTransactions?: ScreenTimeTransaction[];
 };
