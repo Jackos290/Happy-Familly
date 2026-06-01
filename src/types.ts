@@ -80,6 +80,7 @@ export type ScreenTimeRequest = {
   minutes: number;
   createdAt: string;
   status: "pending" | "approved" | "rejected";
+  kind?: "reward" | "spend";
 };
 
 export type ScreenTimeTransaction = {

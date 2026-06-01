@@ -803,6 +803,14 @@ function ChildScreenTimePanel({
   }
 
   function requestSpend(button: SpendButton) {
+    addScreenTimeRequest(button.label, button.minutes, "spend");
+  }
+
+  function requestReward(label: string, rewardMinutes: number) {
+    addScreenTimeRequest(label, rewardMinutes, "reward");
+  }
+
+  function addScreenTimeRequest(label: string, requestMinutes: number, kind: "reward" | "spend") {
     onDataChange({
       ...data,
       screenTimeRequests: [
@@ -810,10 +818,11 @@ function ChildScreenTimePanel({
         {
           id: createId("screen-request"),
           childId: memberId,
-          label: button.label,
-          minutes: button.minutes,
+          label,
+          minutes: requestMinutes,
           createdAt: new Date().toISOString(),
           status: "pending",
+          kind,
         },
       ],
     });
@@ -851,20 +860,40 @@ function ChildScreenTimePanel({
                 title={task.title}
                 minutes={`+${task.rewardMinutes ?? 0} min`}
                 tone="green"
+                onClick={() => requestReward(task.title, task.rewardMinutes ?? 0)}
               />
             ))}
-            {todoTasks.length === 0 && <EmptyScreenTile text="Aucune tâche à demander." />}
+            {CHILD_TASK_TEMPLATES.map((task) => (
+              <RewardTile
+                key={`template-${task.title}`}
+                icon={task.icon}
+                title={task.title}
+                minutes={task.minutesLabel}
+                tone="green"
+                onClick={() => requestReward(task.title, task.minutes)}
+              />
+            ))}
           </RewardSection>
 
           <RewardSection title="🌈 J'ai bien travaillé">
             {DEFAULT_REWARDS.work.map((reward) => (
-              <RewardTile key={reward.title} {...reward} tone="amber" />
+              <RewardTile
+                key={reward.title}
+                {...reward}
+                tone="amber"
+                onClick={() => requestReward(reward.title, reward.requestMinutes)}
+              />
             ))}
           </RewardSection>
 
           <RewardSection title="🎁 Bonus">
             {DEFAULT_REWARDS.bonus.map((reward) => (
-              <RewardTile key={reward.title} {...reward} tone="red" />
+              <RewardTile
+                key={reward.title}
+                {...reward}
+                tone="red"
+                onClick={() => requestReward(reward.title, reward.requestMinutes)}
+              />
             ))}
           </RewardSection>
 
@@ -893,15 +922,7 @@ function ChildScreenTimePanel({
           <ScreenListTitle icon="📨" title={`Demandes en attente (${requests.filter((request) => request.status === "pending").length})`} />
           {requests.length === 0 && <EmptyScreenTile text="Aucune demande pour le moment." />}
           {requests.map((request) => (
-            <div key={request.id} className="rounded-2xl border border-[#3a3463] bg-[#211d3d] p-4">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="font-black">{request.label}</p>
-                  <p className="text-xs font-bold text-white/45">{formatShortDate(request.createdAt)} · {request.status}</p>
-                </div>
-                <p className="font-serif text-xl font-black text-[#ff7b72]">-{request.minutes} min</p>
-              </div>
-            </div>
+            <ScreenRequestHistoryItem key={request.id} request={request} />
           ))}
           <ScreenListTitle icon="✅" title="Temps gagné" />
           {doneTasks.map((task) => (
@@ -960,6 +981,8 @@ function ParentScreenTimeManager({ data, onDataChange }: { data: AppData; onData
 
   function updateRequest(requestId: string, status: "approved" | "rejected") {
     const request = requests.find((item) => item.id === requestId);
+    const requestKind = request?.kind ?? "spend";
+    const transactionMinutes = request ? (requestKind === "spend" ? -request.minutes : request.minutes) : 0;
     onDataChange({
       ...data,
       screenTimeRequests: requests.map((item) => (item.id === requestId ? { ...item, status } : item)),
@@ -970,9 +993,9 @@ function ParentScreenTimeManager({ data, onDataChange }: { data: AppData; onData
               id: createId("screen-transaction"),
               childId: request.childId,
               label: request.label,
-              minutes: -request.minutes,
+              minutes: transactionMinutes,
               createdAt: new Date().toISOString(),
-              type: "spend",
+              type: requestKind,
             },
           ]
         : data.screenTimeTransactions,
@@ -1009,18 +1032,23 @@ function ParentScreenTimeManager({ data, onDataChange }: { data: AppData; onData
           {pendingRequests.length === 0 && <EmptyScreenTile text="Aucune demande à valider." />}
           {pendingRequests.map((request) => {
             const child = data.familyMembers.find((member) => member.id === request.childId);
+            const requestKind = request.kind ?? "spend";
             return (
               <div key={request.id} className="rounded-2xl border border-[#3a3463] bg-[#211d3d] p-4">
                 <div className="flex items-center gap-3">
                   <AvatarBubble member={child} size="lg" />
                   <div>
                     <p className="font-black">{child?.name ?? "Enfant"} 😎</p>
-                    <p className="text-xs font-bold text-white/45">Demande de dépense · {formatShortDate(request.createdAt)}</p>
+                    <p className="text-xs font-bold text-white/45">
+                      Demande de {requestKind === "reward" ? "récompense" : "dépense"} · {formatShortDate(request.createdAt)}
+                    </p>
                   </div>
                 </div>
                 <div className="mt-3 flex items-center justify-between rounded-xl bg-[#312b57] px-3 py-3">
                   <p className="font-black">{request.label}</p>
-                  <p className="font-serif text-xl font-black text-[#ff7b72]">-{request.minutes} min</p>
+                  <p className={`font-serif text-xl font-black ${requestKind === "reward" ? "text-[#83efb2]" : "text-[#ff7b72]"}`}>
+                    {requestKind === "reward" ? "+" : "-"}{request.minutes} min
+                  </p>
                 </div>
                 <div className="mt-3 grid grid-cols-2 gap-2">
                   <button onClick={() => updateRequest(request.id, "rejected")} className="rounded-xl border border-[#ff7b72] bg-[#3a243a] px-3 py-3 text-sm font-black text-[#ff7b72]">
@@ -1074,6 +1102,23 @@ function ParentScreenTimeManager({ data, onDataChange }: { data: AppData; onData
   );
 }
 
+function ScreenRequestHistoryItem({ request }: { request: NonNullable<AppData["screenTimeRequests"]>[number] }) {
+  const requestKind = request.kind ?? "spend";
+  return (
+    <div className="rounded-2xl border border-[#3a3463] bg-[#211d3d] p-4">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="font-black">{request.label}</p>
+          <p className="text-xs font-bold text-white/45">{formatShortDate(request.createdAt)} · {request.status}</p>
+        </div>
+        <p className={`font-serif text-xl font-black ${requestKind === "spend" ? "text-[#ff7b72]" : "text-[#83efb2]"}`}>
+          {requestKind === "spend" ? "-" : "+"}{request.minutes} min
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function LockKeyIcon() {
   return <span className="text-lg">🔐</span>;
 }
@@ -1093,18 +1138,31 @@ const SPEND_BUTTONS: SpendButton[] = [
   { label: "2 heures", minutes: 120, icon: "🎮" },
 ];
 
+const CHILD_TASK_TEMPLATES = [
+  { icon: "🛏️", title: "Faire son lit", minutes: 5, minutesLabel: "+5 min" },
+  { icon: "🍽️", title: "Débarrasser la table", minutes: 10, minutesLabel: "+10 min" },
+  { icon: "🧹", title: "Ranger sa chambre", minutes: 15, minutesLabel: "+15 min" },
+  { icon: "🪥", title: "Brosser les dents", minutes: 5, minutesLabel: "+5 min" },
+  { icon: "🍽️", title: "Mettre la table", minutes: 10, minutesLabel: "+10 min" },
+  { icon: "⭐", title: "Ranger la salle de jeux", minutes: 10, minutesLabel: "+10 min" },
+  { icon: "🧦", title: "Plier les chaussettes", minutes: 20, minutesLabel: "+20 min" },
+  { icon: "👕", title: "Mettre son pyjama", minutes: 5, minutesLabel: "+5 min" },
+  { icon: "⭐", title: "Fermer ses volets", minutes: 15, minutesLabel: "+15 min" },
+  { icon: "⭐", title: "Autre", minutes: 10, minutesLabel: "0-600 min" },
+];
+
 const DEFAULT_REWARDS = {
   work: [
-    { icon: "📚", title: "Bonne note à l'école", minutes: "+15-30 min" },
-    { icon: "⭐", title: "Bonus", minutes: "+30-40 min" },
-    { icon: "🎒", title: "Faire son sac", minutes: "+10 min" },
-    { icon: "⏰", title: "Se lever tout seul", minutes: "+10 min" },
-    { icon: "📝", title: "Faire tous les devoirs d'un jour", minutes: "+20 min" },
+    { icon: "📚", title: "Bonne note à l'école", minutes: "+15-30 min", requestMinutes: 20 },
+    { icon: "⭐", title: "Bonus", minutes: "+30-40 min", requestMinutes: 30 },
+    { icon: "🎒", title: "Faire son sac", minutes: "+10 min", requestMinutes: 10 },
+    { icon: "⏰", title: "Se lever tout seul", minutes: "+10 min", requestMinutes: 10 },
+    { icon: "📝", title: "Faire tous les devoirs d'un jour", minutes: "+20 min", requestMinutes: 20 },
   ],
   bonus: [
-    { icon: "⚽", title: "Entraînement sport", minutes: "+30-180 min" },
-    { icon: "⭐", title: "Bon match", minutes: "+30-180 min" },
-    { icon: "⭐", title: "Séance de sport", minutes: "+5-60 min" },
+    { icon: "⚽", title: "Entraînement sport", minutes: "+30-180 min", requestMinutes: 60 },
+    { icon: "⭐", title: "Bon match", minutes: "+30-180 min", requestMinutes: 60 },
+    { icon: "⭐", title: "Séance de sport", minutes: "+5-60 min", requestMinutes: 30 },
   ],
 };
 
@@ -1143,19 +1201,25 @@ function RewardTile({
   title,
   minutes,
   tone,
+  onClick,
 }: {
   icon: string;
   title: string;
   minutes: string;
   tone: "green" | "amber" | "red";
+  onClick?: () => void;
 }) {
   const color = tone === "green" ? "text-[#83efb2]" : tone === "amber" ? "text-[#ffd38a]" : "text-[#ff7b72]";
   return (
-    <div className="min-h-24 rounded-2xl border border-[#3a3463] bg-[#211d3d] p-4 shadow-sm">
+    <button
+      type="button"
+      onClick={onClick}
+      className="min-h-24 rounded-2xl border border-[#3a3463] bg-[#211d3d] p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-[#83efb2]"
+    >
       <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[#34305a] text-lg">{icon}</span>
       <p className="mt-2 line-clamp-2 text-sm font-black text-white">{title}</p>
       <p className={`font-serif text-xl font-black italic ${color}`}>{minutes}</p>
-    </div>
+    </button>
   );
 }
 
