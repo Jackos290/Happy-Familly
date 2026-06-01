@@ -240,7 +240,7 @@ export default function Dashboard({
   }
 
   return (
-    <main onPointerDownCapture={keepFullscreen} className="h-screen overflow-hidden bg-[#151229] px-3 py-3 text-white sm:px-5">
+    <main className="h-screen overflow-hidden bg-[#151229] px-3 py-3 text-white sm:px-5">
       <div className="mx-auto flex h-full max-w-[1600px] flex-col gap-3">
         <header className="flex min-h-[5.25rem] shrink-0 items-center justify-between gap-3 overflow-hidden rounded-[1.4rem] border border-[#3a3463] bg-[#1d1935] px-4 py-3 shadow-glass backdrop-blur-2xl lg:px-5">
           <div className="flex min-w-0 flex-1 items-center gap-3 overflow-hidden">
@@ -626,7 +626,7 @@ function PersonalApp({
   }
 
   return (
-    <main onPointerDownCapture={keepFullscreen} className="min-h-screen bg-[#151229] pb-4 text-white">
+    <main className="min-h-screen bg-[#151229] pb-4 text-white">
       <div className={`mx-auto flex max-w-3xl flex-col gap-4 px-4 ${isHome ? "py-4" : "py-4"}`}>
         {!isHome && (
           <button
@@ -639,7 +639,7 @@ function PersonalApp({
         )}
 
         <section className={tab === "home" ? "" : "rounded-[1.75rem] border border-white/70 bg-white/90 p-4 text-slate-900 shadow-glass backdrop-blur-2xl"}>
-          {renderPersonalTab(tab, data, onDataChange, memberId, isChild, memberName, onTabChange)}
+          {renderPersonalTab(tab, data, onDataChange, memberId, isChild, memberName, onTabChange, onOpenSettings)}
         </section>
       </div>
 
@@ -656,6 +656,7 @@ function renderPersonalTab(
   isChild: boolean,
   memberName: string,
   onTabChange: (tab: PersonalTab) => void,
+  onOpenSettings: () => void,
 ) {
   switch (tab) {
     case "calendar":
@@ -688,7 +689,7 @@ function renderPersonalTab(
     case "thanks":
       return <DailyThanks data={data} onDataChange={onDataChange} />;
     case "home":
-      return <LauncherHome data={data} memberId={memberId} memberName={memberName} isChild={isChild} onTabChange={onTabChange} />;
+      return <LauncherHome data={data} memberId={memberId} memberName={memberName} isChild={isChild} onTabChange={onTabChange} onOpenSettings={onOpenSettings} />;
   }
 }
 
@@ -698,12 +699,14 @@ function LauncherHome({
   memberName,
   isChild,
   onTabChange,
+  onOpenSettings,
 }: {
   data: AppData;
   memberId: string;
   memberName: string;
   isChild: boolean;
   onTabChange: (tab: PersonalTab) => void;
+  onOpenSettings: () => void;
 }) {
   const todoTasks = data.tasks.filter((task) => task.personId === memberId && !task.done);
   const calendarCount = data.calendarEvents.filter((event) => event.personId === memberId || !event.personId).length;
@@ -735,8 +738,21 @@ function LauncherHome({
       </div>
 
       <section className="rounded-[2rem] border border-[#3a3463] bg-[#1d1935] p-4 backdrop-blur-xl">
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-4 flex items-center justify-between gap-3">
           <h2 className="text-2xl font-black text-white">Mes applications</h2>
+          <button
+            type="button"
+            onClick={() => {
+              if (!document.fullscreenElement) {
+                void document.documentElement.requestFullscreen().catch(() => undefined);
+              }
+              onOpenSettings();
+            }}
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#34305a] text-[#ffd38a]"
+            title="Options"
+          >
+            <Settings className="h-5 w-5" />
+          </button>
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {tiles.map((tile) => (
@@ -748,14 +764,14 @@ function LauncherHome({
                 }
                 onTabChange(tile.tab);
               }}
-              className={`group relative min-h-40 overflow-hidden rounded-[1.5rem] border ${tile.className} bg-gradient-to-br p-5 text-left text-white shadow-lg transition hover:-translate-y-0.5 hover:border-[#ffd38a]`}
+              className={`group relative min-h-40 overflow-hidden rounded-[1.5rem] border ${tile.className} bg-gradient-to-br text-left text-white shadow-lg transition hover:-translate-y-0.5 hover:border-[#ffd38a]`}
             >
               <span className="pointer-events-none absolute -bottom-10 -right-8 h-36 w-36 rounded-full bg-white/10 transition group-hover:scale-110" />
               <span className="pointer-events-none absolute -top-16 left-8 h-32 w-32 rounded-full bg-[#ffd38a]/10 blur-xl" />
               <span className="absolute bottom-4 right-4 rounded-[1.25rem] bg-[#ffd38a]/10 p-3 text-[#ffd38a] [&_svg]:h-14 [&_svg]:w-14">
                 {tile.icon}
               </span>
-              <p className="relative z-10 text-2xl font-black leading-tight">{tile.label}</p>
+              <p className="absolute left-5 right-5 top-5 z-10 max-w-[8rem] text-2xl font-black leading-tight">{tile.label}</p>
               {tile.badge !== undefined && tile.badge !== 0 && (
                 <span className="absolute left-4 bottom-4 z-10 min-w-9 rounded-full bg-[#ffd38a] px-3 py-1.5 text-center text-sm font-black text-[#151229]">
                   {tile.badge}

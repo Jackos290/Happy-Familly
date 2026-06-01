@@ -25,8 +25,13 @@ export default function AccessChooser({ data, syncStatus, onChoose, onDataChange
     }
   }
 
+  function chooseWithFullscreen(choice: AccessChoice) {
+    keepFullscreen();
+    onChoose(choice);
+  }
+
   return (
-    <main onPointerDownCapture={keepFullscreen} className="min-h-screen bg-[#151229] px-5 py-6 text-white">
+    <main className="min-h-screen bg-[#151229] px-5 py-6 text-white">
       <section className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-4xl flex-col justify-center gap-6">
         <div className="rounded-[2rem] border border-[#3a3463] bg-[#1d1935] p-6 shadow-glass backdrop-blur-2xl sm:p-8">
           <div className="flex flex-wrap items-start justify-between gap-4">
@@ -57,7 +62,7 @@ export default function AccessChooser({ data, syncStatus, onChoose, onDataChange
                 key={member.id}
                 member={member}
                 label="Espace enfant"
-                onClick={() => onChoose({ type: "member", memberId: member.id })}
+                onClick={() => chooseWithFullscreen({ type: "member", memberId: member.id })}
               />
             ))}
             {parents.map((member) => (
@@ -66,14 +71,14 @@ export default function AccessChooser({ data, syncStatus, onChoose, onDataChange
                 member={member}
                 label="Espace parent"
                 parent
-                onClick={() => onChoose({ type: "member", memberId: member.id })}
+                onClick={() => chooseWithFullscreen({ type: "member", memberId: member.id })}
               />
             ))}
           </div>
         </div>
 
         <button
-          onClick={() => onChoose({ type: "dashboard" })}
+          onClick={() => chooseWithFullscreen({ type: "dashboard" })}
           className="mx-auto flex min-h-20 w-full max-w-4xl items-center rounded-[1.5rem] border border-[#3a3463] bg-[#211d3d] p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-[#ffd38a]"
         >
           <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[#34305a] text-[#ffd38a]">
