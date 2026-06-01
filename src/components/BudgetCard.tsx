@@ -22,6 +22,7 @@ export default function BudgetCard({ data, onDataChange }: Props) {
   const [label, setLabel] = useState("");
   const [amount, setAmount] = useState("");
   const [dateISO, setDateISO] = useState(toISODate(new Date()));
+  const [transactionType, setTransactionType] = useState<"expense" | "income">("expense");
   const [recurring, setRecurring] = useState(false);
   const [movementLabel, setMovementLabel] = useState("");
   const [movementAmount, setMovementAmount] = useState("");
@@ -71,7 +72,8 @@ export default function BudgetCard({ data, onDataChange }: Props) {
     const parsedAmount = Number(amount);
     if (!label.trim() || Number.isNaN(parsedAmount) || parsedAmount <= 0) return;
 
-    const expense: Expense = { id: createId("expense"), label: label.trim(), amount: parsedAmount, dateISO, recurring };
+    const signedAmount = transactionType === "income" ? -parsedAmount : parsedAmount;
+    const expense: Expense = { id: createId("expense"), label: label.trim(), amount: signedAmount, dateISO, recurring, type: transactionType };
     onDataChange({
       ...data,
       budget: {
@@ -83,6 +85,7 @@ export default function BudgetCard({ data, onDataChange }: Props) {
     setLabel("");
     setAmount("");
     setDateISO(toISODate(new Date()));
+    setTransactionType("expense");
     setRecurring(false);
   }
 
@@ -143,8 +146,12 @@ export default function BudgetCard({ data, onDataChange }: Props) {
         </label>
       </div>
 
-      <form onSubmit={addExpense} className="grid grid-cols-1 gap-3 rounded-3xl border border-[#3a3463] bg-[#17142c] p-3 xl:grid-cols-[minmax(0,1fr)_110px_150px_160px_56px]">
-        <input className="field" value={label} onChange={(event) => setLabel(event.target.value)} placeholder="Nouvelle dépense" />
+      <form onSubmit={addExpense} className="grid grid-cols-1 gap-3 rounded-3xl border border-[#3a3463] bg-[#17142c] p-3 xl:grid-cols-[160px_minmax(0,1fr)_110px_150px_160px_56px]">
+        <select className="field" value={transactionType} onChange={(event) => setTransactionType(event.target.value as "expense" | "income")}>
+          <option value="expense">Nouvelle dépense</option>
+          <option value="income">Nouvelle rentrée</option>
+        </select>
+        <input className="field" value={label} onChange={(event) => setLabel(event.target.value)} placeholder={transactionType === "income" ? "Nom de la rentrée" : "Nom de la dépense"} />
         <input className="field" type="number" min="0" step="1" value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="€" />
         <input className="field" type="date" value={dateISO} onChange={(event) => setDateISO(event.target.value)} aria-label="Date de débit" />
         <label className="flex min-h-12 items-center gap-2 rounded-2xl bg-white px-4 font-bold text-slate-700">

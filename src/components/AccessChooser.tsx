@@ -86,7 +86,7 @@ export default function AccessChooser({ data, syncStatus, onChoose, onDataChange
 
       {settingsOpen && (
         <Modal title="Options famille" onClose={() => setSettingsOpen(false)}>
-          <FamilySettings data={data} onDataChange={onDataChange} canEditPins />
+          <FamilySettings data={data} onDataChange={onDataChange} canEditPins canEditAll />
         </Modal>
       )}
     </main>

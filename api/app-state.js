@@ -45,7 +45,9 @@ export default async function handler(request, response) {
 
     if (request.method === "POST") {
       const body = request.body;
-      const appData = typeof body === "string" ? JSON.parse(body).data : body.data;
+      const incomingData = typeof body === "string" ? JSON.parse(body).data : body.data;
+      const existingData = await loadExistingData();
+      const appData = mergeAssetFields(existingData, incomingData);
       const updatedAt = new Date().toISOString();
       const supabaseResponse = await fetch(`${SUPABASE_URL}/rest/v1/app_state`, {
         method: "POST",
@@ -89,6 +91,42 @@ export default async function handler(request, response) {
       supabaseUrl: SUPABASE_URL,
     });
   }
+}
+
+async function loadExistingData() {
+  try {
+    const supabaseResponse = await fetch(
+      `${SUPABASE_URL}/rest/v1/app_state?id=eq.${APP_STATE_ID}&select=data`,
+      {
+        headers: supabaseHeaders(),
+      },
+    );
+
+    if (!supabaseResponse.ok) return null;
+    const payload = await supabaseResponse.json();
+    return payload[0]?.data ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function mergeAssetFields(existingData, incomingData) {
+  if (!existingData || !incomingData) return incomingData;
+
+  const existingMembers = new Map((existingData.familyMembers ?? []).map((member) => [member.id, member]));
+  const existingShopping = new Map((existingData.shoppingItems ?? []).map((item) => [item.id, item]));
+
+  return {
+    ...incomingData,
+    familyMembers: (incomingData.familyMembers ?? []).map((member) => ({
+      ...member,
+      photoUrl: member.photoUrl || existingMembers.get(member.id)?.photoUrl,
+    })),
+    shoppingItems: (incomingData.shoppingItems ?? []).map((item) => ({
+      ...item,
+      photoUrl: item.photoUrl || existingShopping.get(item.id)?.photoUrl,
+    })),
+  };
 }
 
 function supabaseHeaders() {

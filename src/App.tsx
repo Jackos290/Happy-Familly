@@ -1,4 +1,4 @@
-import { Component, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { Component, useEffect, useRef, useState, type ReactNode } from "react";
 import AccessChooser, { type AccessChoice } from "./components/AccessChooser";
 import Dashboard from "./components/Dashboard";
 import type { AppData } from "./types";
@@ -236,8 +236,7 @@ function PinGate({
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
 
-  function submit(event: FormEvent) {
-    event.preventDefault();
+  function submit() {
     if (pin === expectedPin) {
       onUnlock();
       return;
@@ -248,32 +247,33 @@ function PinGate({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#151229]/80 p-4 backdrop-blur-sm">
-      <form onSubmit={submit} className="w-full max-w-sm rounded-[2rem] border border-[#3a3463] bg-[#1d1935] p-6 text-white shadow-glass">
+      <section className="w-full max-w-sm rounded-[2rem] border border-[#3a3463] bg-[#1d1935] p-6 text-white shadow-glass">
         <p className="font-serif text-lg font-black italic text-[#ffd38a]">Code d'accès</p>
         <h2 className="mt-2 text-3xl font-black">{memberName}</h2>
-        <input
-          autoFocus
-          className="mt-5 min-h-14 w-full rounded-2xl border border-[#3a3463] bg-[#17142c] px-5 text-center text-3xl font-black tracking-[0.4em] text-white outline-none"
-          value={pin}
-          inputMode="numeric"
-          type="password"
-          maxLength={8}
-          onChange={(event) => {
-            setError("");
-            setPin(event.target.value);
-          }}
-          placeholder="1234"
-        />
+        <div className="mt-5 flex h-14 items-center justify-center rounded-2xl border border-[#3a3463] bg-[#17142c] text-3xl font-black tracking-[0.35em]">
+          {pin ? "•".repeat(pin.length) : "----"}
+        </div>
         {error && <p className="mt-3 text-sm font-black text-rose-300">{error}</p>}
-        <div className="mt-5 grid grid-cols-2 gap-3">
-          <button type="button" onClick={onCancel} className="min-h-12 rounded-2xl border border-[#3a3463] bg-[#211d3d] font-black text-white">
-            Annuler
+        <div className="mt-5 grid grid-cols-3 gap-2">
+          {["1", "2", "3", "4", "5", "6", "7", "8", "9"].map((digit) => (
+            <button key={digit} type="button" onClick={() => { setError(""); setPin((current) => `${current}${digit}`.slice(0, 8)); }} className="min-h-14 rounded-2xl bg-[#34305a] text-xl font-black">
+              {digit}
+            </button>
+          ))}
+          <button type="button" onClick={() => setPin((current) => current.slice(0, -1))} className="min-h-14 rounded-2xl bg-[#211d3d] text-sm font-black">
+            Effacer
           </button>
-          <button className="min-h-12 rounded-2xl bg-[#ffd38a] font-black text-[#151229]">
-            Entrer
+          <button type="button" onClick={() => { setError(""); setPin((current) => `${current}0`.slice(0, 8)); }} className="min-h-14 rounded-2xl bg-[#34305a] text-xl font-black">
+            0
+          </button>
+          <button type="button" onClick={submit} className="min-h-14 rounded-2xl bg-[#ffd38a] text-lg font-black text-[#151229]">
+            OK
           </button>
         </div>
-      </form>
+        <button type="button" onClick={onCancel} className="mt-3 min-h-12 w-full rounded-2xl border border-[#3a3463] bg-[#211d3d] font-black text-white">
+          Annuler
+        </button>
+      </section>
     </div>
   );
 }

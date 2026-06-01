@@ -6,9 +6,15 @@ type Props = {
   data: AppData;
   onDataChange: (data: AppData) => void;
   canEditPins?: boolean;
+  editableMemberId?: string | null;
+  canEditAll?: boolean;
 };
 
-export default function FamilySettings({ data, onDataChange, canEditPins = false }: Props) {
+export default function FamilySettings({ data, onDataChange, canEditPins = false, editableMemberId = null, canEditAll = false }: Props) {
+  const visibleMembers = canEditAll || !editableMemberId
+    ? data.familyMembers
+    : data.familyMembers.filter((member) => member.id === editableMemberId);
+
   function updateMember(memberId: string, changes: Partial<FamilyMember>) {
     onDataChange({
       ...data,
@@ -30,7 +36,7 @@ export default function FamilySettings({ data, onDataChange, canEditPins = false
 
   return (
     <div className="grid gap-3 sm:grid-cols-2">
-      {data.familyMembers.map((member) => (
+      {visibleMembers.map((member) => (
         <div key={member.id} className="rounded-3xl bg-white/60 p-4">
           <div className="flex items-center gap-3">
             <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-3xl bg-slate-100">
@@ -66,7 +72,7 @@ export default function FamilySettings({ data, onDataChange, canEditPins = false
               onChange={(event) => updatePhoto(member.id, event)}
             />
           </label>
-          {canEditPins && (
+          {(canEditPins || editableMemberId === member.id) && (
             <label className="mt-3 block">
               <span className="mb-1 block text-xs font-black uppercase tracking-[0.14em] text-slate-500">Code d'accès</span>
               <input

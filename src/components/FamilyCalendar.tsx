@@ -35,7 +35,9 @@ export default function FamilyCalendar({ data, onDataChange, expanded = false, s
   const [personId, setPersonId] = useState(selectedMemberId ?? members[0]?.id ?? "");
   const [recurrence, setRecurrence] = useState<CalendarEvent["recurrence"]>("none");
   const [weekdays, setWeekdays] = useState<number[]>([new Date().getDay()]);
-  const [view, setView] = useState<CalendarView>("month");
+  const [view, setView] = useState<CalendarView>("week");
+  const [calendarFilter, setCalendarFilter] = useState("all");
+  const [formOpen, setFormOpen] = useState(false);
   const [cursorDate, setCursorDate] = useState(new Date());
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [editTitle, setEditTitle] = useState("");
@@ -44,12 +46,14 @@ export default function FamilyCalendar({ data, onDataChange, expanded = false, s
   const [editTime, setEditTime] = useState("");
   const [editPersonId, setEditPersonId] = useState("");
 
+  const activeMemberId = expanded ? (calendarFilter === "all" ? null : calendarFilter) : selectedMemberId;
+
   const dashboardEventsByDate = useMemo(() => {
     const dashboardStart = atNoon(new Date());
     const dashboardEnd = atNoon(new Date());
     dashboardEnd.setDate(dashboardEnd.getDate() + 1);
     const events = uniqueEvents([...getSpecialEventsForDashboard(), ...expandRecurringEvents(calendarEvents, dashboardStart, dashboardEnd)]).filter((event) =>
-      matchesSelectedMember(event, selectedMemberId),
+      matchesSelectedMember(event, activeMemberId),
     );
 
     return {
@@ -64,12 +68,12 @@ export default function FamilyCalendar({ data, onDataChange, expanded = false, s
         })
         .sort(compareEvents),
     };
-  }, [calendarEvents, selectedMemberId]);
+  }, [activeMemberId, calendarEvents]);
 
   const range = getViewRange(cursorDate, view);
   const rangeEvents = useMemo(() => {
     const events = uniqueEvents([...getSpecialEventsForRange(range.start, range.end), ...expandRecurringEvents(calendarEvents, range.start, range.end)]).filter((event) =>
-      matchesSelectedMember(event, selectedMemberId),
+      matchesSelectedMember(event, activeMemberId),
     );
 
     return events
@@ -78,7 +82,7 @@ export default function FamilyCalendar({ data, onDataChange, expanded = false, s
         return eventDate >= toDateKey(range.start) && eventDate <= toDateKey(range.end);
       })
       .sort(compareEvents);
-  }, [calendarEvents, range.start, range.end, selectedMemberId]);
+  }, [activeMemberId, calendarEvents, range.start, range.end]);
 
   useEffect(() => {
     if (selectedMemberId) {
@@ -117,6 +121,7 @@ export default function FamilyCalendar({ data, onDataChange, expanded = false, s
       ],
     });
     setTitle("");
+    setFormOpen(false);
   }
 
   function openEvent(event: CalendarEvent) {
@@ -219,7 +224,15 @@ export default function FamilyCalendar({ data, onDataChange, expanded = false, s
           <ViewButton active={view === "week"} onClick={() => setView("week")}>Semaine</ViewButton>
           <ViewButton active={view === "day"} onClick={() => setView("day")}>Journée</ViewButton>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <select className="field w-auto min-w-44" value={calendarFilter} onChange={(event) => setCalendarFilter(event.target.value)}>
+            <option value="all">Toute la famille</option>
+            {members.map((member) => (
+              <option key={member.id} value={member.id}>
+                {member.name}
+              </option>
+            ))}
+          </select>
           <button className="icon-button" onClick={() => setCursorDate(moveCursor(cursorDate, view, -1))}>
             <ChevronLeft className="h-5 w-5" />
           </button>
@@ -229,27 +242,42 @@ export default function FamilyCalendar({ data, onDataChange, expanded = false, s
           <button className="icon-button" onClick={() => setCursorDate(moveCursor(cursorDate, view, 1))}>
             <ChevronRight className="h-5 w-5" />
           </button>
+          <button className="icon-button bg-[#ffd38a] text-[#151229]" onClick={() => setFormOpen(true)} title="Ajouter un rendez-vous">
+            <Plus className="h-5 w-5" />
+          </button>
         </div>
       </div>
 
-      <CalendarForm
-        title={title}
-        time={time}
-        date={date}
-        endDate={endDate}
-        personId={personId}
-        recurrence={recurrence}
-        weekdays={weekdays}
-        data={data}
-        onSubmit={addEvent}
-        onTitleChange={setTitle}
-        onTimeChange={setTime}
-        onDateChange={setDate}
-        onEndDateChange={setEndDate}
-        onPersonChange={setPersonId}
-        onRecurrenceChange={setRecurrence}
-        onWeekdaysChange={setWeekdays}
-      />
+      {formOpen && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-[#151229]/80 p-4 backdrop-blur-sm">
+          <section className="w-full max-w-5xl rounded-[2rem] border border-[#3a3463] bg-[#1d1935] p-5 shadow-glass">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h3 className="text-2xl font-black text-white">Ajouter un rendez-vous</h3>
+              <button type="button" className="icon-button" onClick={() => setFormOpen(false)}>
+                x
+              </button>
+            </div>
+            <CalendarForm
+              title={title}
+              time={time}
+              date={date}
+              endDate={endDate}
+              personId={personId}
+              recurrence={recurrence}
+              weekdays={weekdays}
+              data={data}
+              onSubmit={addEvent}
+              onTitleChange={setTitle}
+              onTimeChange={setTime}
+              onDateChange={setDate}
+              onEndDateChange={setEndDate}
+              onPersonChange={setPersonId}
+              onRecurrenceChange={setRecurrence}
+              onWeekdaysChange={setWeekdays}
+            />
+          </section>
+        </div>
+      )}
 
       {view === "month" ? (
         <MonthGrid cursorDate={cursorDate} events={rangeEvents} data={data} onOpen={openEvent} />

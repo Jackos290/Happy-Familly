@@ -232,7 +232,7 @@ export default function Dashboard({
       >
         {settingsOpen && (
           <Modal title="Options famille" onClose={() => setSettingsOpen(false)}>
-            <FamilySettings data={data} onDataChange={onDataChange} canEditPins={canEditPins} />
+            <FamilySettings data={data} onDataChange={onDataChange} canEditPins={canEditPins} editableMemberId={selectedMember.id} canEditAll={canEditPins} />
           </Modal>
         )}
       </PersonalApp>
@@ -633,7 +633,7 @@ function PersonalApp({
         )}
 
         <section className={tab === "home" ? "" : "rounded-[1.75rem] border border-white/70 bg-white/90 p-4 text-slate-900 shadow-glass backdrop-blur-2xl"}>
-          {renderPersonalTab(tab, data, onDataChange, memberId, isChild, memberName, onTabChange, onOpenSettings)}
+          {renderPersonalTab(tab, data, onDataChange, memberId, isChild, memberName, onTabChange, onOpenSettings, onBackToChooser)}
         </section>
       </div>
 
@@ -651,13 +651,14 @@ function renderPersonalTab(
   memberName: string,
   onTabChange: (tab: PersonalTab) => void,
   onOpenSettings: () => void,
+  onBackToChooser?: () => void,
 ) {
   switch (tab) {
     case "calendar":
       return (
         <div className="space-y-4">
           {!isChild && <GoogleCalendarSync data={data} memberId={memberId} onDataChange={onDataChange} />}
-          <FamilyCalendar data={data} onDataChange={onDataChange} selectedMemberId={memberId} expanded />
+          <FamilyCalendar data={data} onDataChange={onDataChange} selectedMemberId={null} expanded />
         </div>
       );
     case "tasks":
@@ -683,7 +684,7 @@ function renderPersonalTab(
     case "thanks":
       return <DailyThanks data={data} onDataChange={onDataChange} />;
     case "home":
-      return <LauncherHome data={data} memberId={memberId} memberName={memberName} isChild={isChild} onTabChange={onTabChange} onOpenSettings={onOpenSettings} />;
+      return <LauncherHome data={data} memberId={memberId} memberName={memberName} isChild={isChild} onTabChange={onTabChange} onOpenSettings={onOpenSettings} onBackToChooser={onBackToChooser} />;
   }
 }
 
@@ -694,6 +695,7 @@ function LauncherHome({
   isChild,
   onTabChange,
   onOpenSettings,
+  onBackToChooser,
 }: {
   data: AppData;
   memberId: string;
@@ -701,12 +703,26 @@ function LauncherHome({
   isChild: boolean;
   onTabChange: (tab: PersonalTab) => void;
   onOpenSettings: () => void;
+  onBackToChooser?: () => void;
 }) {
   const todoTasks = data.tasks.filter((task) => task.personId === memberId && !task.done);
   const calendarCount = data.calendarEvents.filter((event) => event.personId === memberId || !event.personId).length;
   const shoppingCount = data.shoppingItems.filter((item) => !item.checked).length;
   const thanksCount = data.thanksMessages.length;
   const minutes = getRewardMinutes(data, memberId);
+  const [launcherWeather, setLauncherWeather] = useState<Weather>(data.weather);
+
+  useEffect(() => {
+    let mounted = true;
+    fetchGorcyForecast()
+      .then((forecast) => {
+        if (mounted) setLauncherWeather(forecast.today);
+      })
+      .catch(() => undefined);
+    return () => {
+      mounted = false;
+    };
+  }, []);
   const tiles: Array<{
     label: string;
     tab: PersonalTab;
@@ -720,15 +736,24 @@ function LauncherHome({
     { label: isChild ? "Temps" : "Budget", tab: "budget", icon: isChild ? <TimerReset /> : <PiggyBank />, badge: isChild ? `${minutes}m` : undefined, className: "from-[#342c5f] to-[#211d3d] border-[#6c5a98]" },
     ...(!isChild ? [{ label: "Temps", tab: "screenTime" as PersonalTab, icon: <TimerReset />, className: "from-[#272247] to-[#1d1935] border-[#4b4075]" }] : []),
     { label: isChild ? "Routines" : "Todo", tab: isChild ? "tasks" : "todo", icon: <ListTodo />, className: "from-[#272247] to-[#1d1935] border-[#4b4075]" },
-    { label: "Météo", tab: "weather", icon: <SunMedium />, badge: `${data.weather.temperature}°`, className: "from-[#302957] to-[#211d3d] border-[#5f528a]" },
+    { label: "Météo", tab: "weather", icon: <SunMedium />, badge: `${launcherWeather.temperature}°`, className: "from-[#302957] to-[#211d3d] border-[#5f528a]" },
     { label: "Merci", tab: "thanks", icon: <Heart />, badge: thanksCount, className: "from-[#272247] to-[#1d1935] border-[#4b4075]" },
   ];
 
   return (
     <div className="space-y-5">
       <div className="pt-2">
-        <p className="font-serif text-lg font-black italic text-[#ffd38a]">Famille</p>
-        <h1 className="mt-2 text-4xl font-black leading-tight text-white">Bonjour {memberName}</h1>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="font-serif text-lg font-black italic text-[#ffd38a]">Famille</p>
+            <h1 className="mt-2 text-4xl font-black leading-tight text-white">Bonjour {memberName}</h1>
+          </div>
+          {onBackToChooser && (
+            <button onClick={onBackToChooser} className="rounded-2xl border border-[#3a3463] bg-[#211d3d] px-4 py-3 text-sm font-black text-white">
+              Changer
+            </button>
+          )}
+        </div>
       </div>
 
       <section className="rounded-[2rem] border border-[#3a3463] bg-[#1d1935] p-4 backdrop-blur-xl">
