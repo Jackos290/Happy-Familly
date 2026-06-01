@@ -19,14 +19,7 @@ export default function AccessChooser({ data, syncStatus, onChoose, onDataChange
   const parents = data.familyMembers.slice(0, 2);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
-  function keepFullscreen() {
-    if (!document.fullscreenElement) {
-      void document.documentElement.requestFullscreen().catch(() => undefined);
-    }
-  }
-
-  function chooseWithFullscreen(choice: AccessChoice) {
-    keepFullscreen();
+  function chooseProfile(choice: AccessChoice) {
     onChoose(choice);
   }
 
@@ -62,7 +55,7 @@ export default function AccessChooser({ data, syncStatus, onChoose, onDataChange
                 key={member.id}
                 member={member}
                 label="Espace enfant"
-                onClick={() => chooseWithFullscreen({ type: "member", memberId: member.id })}
+                onClick={() => chooseProfile({ type: "member", memberId: member.id })}
               />
             ))}
             {parents.map((member) => (
@@ -71,14 +64,14 @@ export default function AccessChooser({ data, syncStatus, onChoose, onDataChange
                 member={member}
                 label="Espace parent"
                 parent
-                onClick={() => chooseWithFullscreen({ type: "member", memberId: member.id })}
+                onClick={() => chooseProfile({ type: "member", memberId: member.id })}
               />
             ))}
           </div>
         </div>
 
         <button
-          onClick={() => chooseWithFullscreen({ type: "dashboard" })}
+          onClick={() => chooseProfile({ type: "dashboard" })}
           className="mx-auto flex min-h-20 w-full max-w-4xl items-center rounded-[1.5rem] border border-[#3a3463] bg-[#211d3d] p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-[#ffd38a]"
         >
           <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[#34305a] text-[#ffd38a]">
