@@ -18,11 +18,13 @@ const EXPENSE_CATEGORIES = [
   { id: "food", label: "Alimentation" },
   { id: "home", label: "Maison" },
   { id: "children", label: "Enfants" },
+  { id: "car", label: "Voiture" },
   { id: "transport", label: "Transport" },
   { id: "health", label: "Santé" },
   { id: "leisure", label: "Loisirs" },
   { id: "bills", label: "Factures" },
   { id: "shopping", label: "Achats" },
+  { id: "savings", label: "Epargne" },
   { id: "other", label: "Autre" },
 ];
 
@@ -147,6 +149,17 @@ export default function BudgetCard({ data, onDataChange }: Props) {
     });
   }
 
+  function updateExpense(expenseId: string, list: "monthly" | "recurring", changes: Partial<Expense>) {
+    onDataChange({
+      ...data,
+      budget: {
+        ...data.budget,
+        expenses: list === "monthly" ? data.budget.expenses.map((expense) => (expense.id === expenseId ? { ...expense, ...changes } : expense)) : data.budget.expenses,
+        recurringExpenses: list === "recurring" ? recurringExpenses.map((expense) => (expense.id === expenseId ? { ...expense, ...changes } : expense)) : recurringExpenses,
+      },
+    });
+  }
+
   return (
     <div className="space-y-4">
       <div className="rounded-[1.5rem] border border-[#3a3463] bg-[#211d3d] p-5 text-white">
@@ -215,7 +228,13 @@ export default function BudgetCard({ data, onDataChange }: Props) {
       <CategoryStats expenses={[...data.budget.expenses, ...recurringExpenses]} />
 
       <ExpenseList title="Dépenses du mois" expenses={data.budget.expenses} parents={parents} onDelete={(id) => deleteExpense(id, "monthly")} />
-      <ExpenseList title="Dépenses récurrentes" expenses={recurringExpenses} parents={parents} onDelete={(id) => deleteExpense(id, "recurring")} />
+      <RecurringExpenseList
+        title="Dépenses récurrentes"
+        expenses={recurringExpenses}
+        parents={parents}
+        onUpdate={(id, changes) => updateExpense(id, "recurring", changes)}
+        onDelete={(id) => deleteExpense(id, "recurring")}
+      />
     </div>
   );
 }
@@ -278,6 +297,53 @@ function CategoryStats({ expenses }: { expenses: Expense[] }) {
         {stats.length === 0 && <p className="rounded-2xl border border-[#3a3463] bg-[#211d3d] px-4 py-3 font-bold text-white/45">Pas encore de dépense catégorisée.</p>}
       </div>
     </section>
+  );
+}
+
+function RecurringExpenseList({
+  title,
+  expenses,
+  parents,
+  onUpdate,
+  onDelete,
+}: {
+  title: string;
+  expenses: Expense[];
+  parents: AppData["familyMembers"];
+  onUpdate: (id: string, changes: Partial<Expense>) => void;
+  onDelete: (id: string) => void;
+}) {
+  return (
+    <div>
+      <h3 className="mb-2 font-black text-white">{title}</h3>
+      <div className="max-h-56 space-y-2 overflow-auto pr-1">
+        {expenses.map((expense) => (
+          <div key={expense.id} className="grid gap-2 rounded-2xl border border-[#3a3463] bg-[#211d3d] px-4 py-3 md:grid-cols-[minmax(0,1fr)_110px_140px_140px_130px_auto] md:items-center">
+            <input className="field" value={expense.label} onChange={(event) => onUpdate(expense.id, { label: event.target.value })} aria-label="Nom de la dépense récurrente" />
+            <input
+              className="field"
+              type="number"
+              min="0"
+              value={Math.abs(expense.amount)}
+              onChange={(event) => onUpdate(expense.id, { amount: Math.max(0, Number(event.target.value) || 0) })}
+              aria-label="Montant"
+            />
+            <AccountSelect parents={parents} value={expense.accountId ?? "joint"} onChange={(value) => onUpdate(expense.id, { accountId: value })} />
+            <CategorySelect value={expense.categoryId ?? "other"} onChange={(value) => onUpdate(expense.id, { categoryId: value })} />
+            <input className="field" type="date" value={expense.dateISO ?? ""} onChange={(event) => onUpdate(expense.id, { dateISO: event.target.value })} aria-label="Date de débit" />
+            <button
+              type="button"
+              onClick={() => onDelete(expense.id)}
+              className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-rose-500/15 text-rose-200 transition hover:bg-rose-500/25"
+              title="Supprimer"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
+        ))}
+        {expenses.length === 0 && <p className="rounded-2xl border border-[#3a3463] bg-[#211d3d] px-4 py-3 font-bold text-white/45">Rien ici.</p>}
+      </div>
+    </div>
   );
 }
 
