@@ -1,4 +1,4 @@
-import { Check, Plus, RotateCcw } from "lucide-react";
+import { Check, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import type { AppData, Task } from "../types";
@@ -102,6 +102,13 @@ export default function TaskBoard({ data, onDataChange, expanded = false, select
     setTab("todo");
   }
 
+  function deleteTask(taskId: string) {
+    onDataChange({
+      ...data,
+      tasks: tasks.filter((task) => task.id !== taskId),
+    });
+  }
+
   if (!expanded) {
     return (
       <div className="space-y-4">
@@ -116,6 +123,7 @@ export default function TaskBoard({ data, onDataChange, expanded = false, select
                   tasks={memberTasks.slice(0, 4)}
                   onToggle={toggleTask}
                   onUpdate={updateTask}
+                  onDelete={deleteTask}
                   compact
                 />
               </div>
@@ -172,6 +180,7 @@ export default function TaskBoard({ data, onDataChange, expanded = false, select
         tasks={visibleTasks}
         onToggle={toggleTask}
         onUpdate={updateTask}
+        onDelete={deleteTask}
         onReactivate={reactivateTask}
         showDoneActions={tab === "done"}
         showRecurrence
@@ -242,6 +251,7 @@ function TaskList({
   tasks,
   onToggle,
   onUpdate,
+  onDelete,
   onReactivate,
   compact = false,
   showDoneActions = false,
@@ -251,6 +261,7 @@ function TaskList({
   tasks: Task[];
   onToggle: (id: string) => void;
   onUpdate: (id: string, changes: Partial<Task>) => void;
+  onDelete: (id: string) => void;
   onReactivate?: (task: Task) => void;
   compact?: boolean;
   showDoneActions?: boolean;
@@ -302,6 +313,14 @@ function TaskList({
                 Réattribuer
               </button>
             )}
+            <button
+              type="button"
+              onClick={() => onDelete(task.id)}
+              className="inline-flex min-h-10 items-center justify-center rounded-2xl bg-rose-50 px-3 text-rose-700 transition hover:bg-rose-100"
+              title="Supprimer la tâche"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
           </div>
         </div>
       ))}

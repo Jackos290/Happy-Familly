@@ -1,4 +1,4 @@
-import { Minus, Plus } from "lucide-react";
+import { Minus, Plus, Trash2 } from "lucide-react";
 import { FormEvent, useMemo, useState } from "react";
 import type { AppData, Expense } from "../types";
 import { createId } from "../utils/localStorage";
@@ -114,6 +114,17 @@ export default function BudgetCard({ data, onDataChange }: Props) {
     setMovementDateISO(toISODate(new Date()));
   }
 
+  function deleteExpense(expenseId: string, list: "monthly" | "recurring") {
+    onDataChange({
+      ...data,
+      budget: {
+        ...data.budget,
+        expenses: list === "monthly" ? data.budget.expenses.filter((expense) => expense.id !== expenseId) : data.budget.expenses,
+        recurringExpenses: list === "recurring" ? recurringExpenses.filter((expense) => expense.id !== expenseId) : recurringExpenses,
+      },
+    });
+  }
+
   return (
     <div className="space-y-4">
       <div className="rounded-[1.5rem] border border-[#3a3463] bg-[#211d3d] p-5 text-white">
@@ -175,8 +186,8 @@ export default function BudgetCard({ data, onDataChange }: Props) {
         </button>
       </div>
 
-      <ExpenseList title="Dépenses du mois" expenses={data.budget.expenses} />
-      <ExpenseList title="Dépenses récurrentes" expenses={recurringExpenses} />
+      <ExpenseList title="Dépenses du mois" expenses={data.budget.expenses} onDelete={(id) => deleteExpense(id, "monthly")} />
+      <ExpenseList title="Dépenses récurrentes" expenses={recurringExpenses} onDelete={(id) => deleteExpense(id, "recurring")} />
     </div>
   );
 }
@@ -185,7 +196,7 @@ function calculateMonthlyTotal(parentIncomes: Record<string, number>, jointAccou
   return Object.values(parentIncomes).reduce((total, value) => total + value, 0) + jointAccountStart;
 }
 
-function ExpenseList({ title, expenses }: { title: string; expenses: Expense[] }) {
+function ExpenseList({ title, expenses, onDelete }: { title: string; expenses: Expense[]; onDelete: (id: string) => void }) {
   return (
     <div>
       <h3 className="mb-2 font-black text-white">{title}</h3>
@@ -196,7 +207,17 @@ function ExpenseList({ title, expenses }: { title: string; expenses: Expense[] }
               <span className="block truncate font-semibold text-white/80">{expense.label}</span>
               {expense.dateISO && <span className="block text-xs font-bold text-white/45">Débit le {formatDate(expense.dateISO)}</span>}
             </span>
-            <span className={`shrink-0 font-bold ${expense.amount < 0 ? "text-emerald-300" : "text-white"}`}>{euros.format(expense.amount)}</span>
+            <div className="flex shrink-0 items-center gap-2">
+              <span className={`font-bold ${expense.amount < 0 ? "text-emerald-300" : "text-white"}`}>{euros.format(expense.amount)}</span>
+              <button
+                type="button"
+                onClick={() => onDelete(expense.id)}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-rose-500/15 text-rose-200 transition hover:bg-rose-500/25"
+                title="Supprimer"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         ))}
         {expenses.length === 0 && <p className="rounded-2xl border border-[#3a3463] bg-[#211d3d] px-4 py-3 font-bold text-white/45">Rien ici.</p>}
