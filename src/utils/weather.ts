@@ -7,12 +7,16 @@ export type HourlyForecast = {
   time: string;
   temperature: number;
   rain: number;
+  windKmh?: number;
+  label?: string;
 };
 
 export type GorcyForecast = {
   today: Weather;
   tomorrow: Weather;
   nextHours: HourlyForecast[];
+  todayHours: HourlyForecast[];
+  tomorrowHours: HourlyForecast[];
 };
 
 export async function fetchGorcyForecast(): Promise<GorcyForecast> {
@@ -21,7 +25,7 @@ export async function fetchGorcyForecast(): Promise<GorcyForecast> {
     longitude: String(GORCY_LONGITUDE),
     current: "temperature_2m,weather_code,wind_speed_10m",
     daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max",
-    hourly: "temperature_2m,precipitation_probability",
+    hourly: "temperature_2m,precipitation_probability,weather_code,wind_speed_10m",
     timezone: "Europe/Paris",
     forecast_days: "2",
   });
@@ -32,6 +36,8 @@ export async function fetchGorcyForecast(): Promise<GorcyForecast> {
     today: mapDailyWeather(result, 0, true),
     tomorrow: mapDailyWeather(result, 1),
     nextHours: mapNextHours(result),
+    todayHours: mapDayHours(result, 0),
+    tomorrowHours: mapDayHours(result, 1),
   };
 }
 
@@ -64,6 +70,8 @@ function mapNextHours(result: any): HourlyForecast[] {
   const times: string[] = result.hourly?.time ?? [];
   const temperatures: number[] = result.hourly?.temperature_2m ?? [];
   const rain: number[] = result.hourly?.precipitation_probability ?? [];
+  const wind: number[] = result.hourly?.wind_speed_10m ?? [];
+  const codes: number[] = result.hourly?.weather_code ?? [];
   const startIndex = Math.max(
     0,
     times.findIndex((time) => new Date(time) >= now),
@@ -76,7 +84,40 @@ function mapNextHours(result: any): HourlyForecast[] {
     }).format(new Date(time)),
     temperature: Math.round(Number(temperatures[startIndex + index])),
     rain: Math.round(Number(rain[startIndex + index] ?? 0)),
+    windKmh: Math.round(Number(wind[startIndex + index] ?? 0)),
+    label: getWeatherLabel(Number(codes[startIndex + index] ?? 0)),
   }));
+}
+
+function mapDayHours(result: any, dayOffset: number): HourlyForecast[] {
+  const times: string[] = result.hourly?.time ?? [];
+  const temperatures: number[] = result.hourly?.temperature_2m ?? [];
+  const rain: number[] = result.hourly?.precipitation_probability ?? [];
+  const wind: number[] = result.hourly?.wind_speed_10m ?? [];
+  const codes: number[] = result.hourly?.weather_code ?? [];
+  const target = new Date();
+  target.setDate(target.getDate() + dayOffset);
+  const targetKey = toDateKey(target);
+  const now = new Date();
+
+  return times
+    .map((time, index) => ({ time, index, date: new Date(time) }))
+    .filter((item) => toDateKey(item.date) === targetKey)
+    .filter((item) => item.date >= now || dayOffset > 0)
+    .filter((item) => {
+      const hour = item.date.getHours();
+      return hour >= 6 && hour <= 22 && hour % 2 === 0;
+    })
+    .map(({ time, index }) => ({
+      time: new Intl.DateTimeFormat("fr-FR", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }).format(new Date(time)),
+      temperature: Math.round(Number(temperatures[index])),
+      rain: Math.round(Number(rain[index] ?? 0)),
+      windKmh: Math.round(Number(wind[index] ?? 0)),
+      label: getWeatherLabel(Number(codes[index] ?? 0)),
+    }));
 }
 
 export function isRainCode(code: number) {
@@ -105,4 +146,51 @@ export function getClothingAdvice(weather: Weather) {
   }
 
   return "Veste légère suffisante.";
+}
+
+export function getDetailedClothingAdvice(weather: Weather, hours: HourlyForecast[] = []) {
+  const min = Math.min(weather.minTemperature ?? weather.temperature, ...hours.map((hour) => hour.temperature));
+  const max = Math.max(weather.maxTemperature ?? weather.temperature, ...hours.map((hour) => hour.temperature));
+  const rainRisk = Math.max(weather.condition === "rain" ? 70 : 0, ...hours.map((hour) => hour.rain));
+  const wind = Math.max(weather.windKmh, ...hours.map((hour) => hour.windKmh ?? 0));
+  const morning = hours.filter((hour) => Number(hour.time.slice(0, 2)) <= 10);
+  const morningMin = morning.length > 0 ? Math.min(...morning.map((hour) => hour.temperature)) : min;
+  const pieces: string[] = [];
+
+  if (rainRisk >= 65) {
+    pieces.push("Veste imperméable obligatoire, capuche ou parapluie, chaussures qui ne prennent pas l'eau.");
+  } else if (rainRisk >= 35) {
+    pieces.push("Prévoir un k-way dans le sac: risque d'averse dans la journée.");
+  }
+
+  if (morningMin <= 5) {
+    pieces.push("Le matin sera froid: manteau chaud, bonnet et chaussures chaudes.");
+  } else if (morningMin <= 11) {
+    pieces.push("Le départ peut être frais: veste chaude ou polaire conseillée.");
+  } else if (morningMin <= 16) {
+    pieces.push("Veste légère utile pour le matin.");
+  }
+
+  if (max >= 26) {
+    pieces.push("L'après-midi peut être chaud: vêtements légers, gourde et casquette si sortie dehors.");
+  } else if (max >= 21 && min <= 14) {
+    pieces.push("Tenue en couches idéale: petite veste le matin, facile à retirer l'après-midi.");
+  }
+
+  if (wind >= 35) {
+    pieces.push("Vent marqué: éviter les vêtements trop légers, prendre une veste qui coupe le vent.");
+  }
+
+  if (pieces.length === 0) {
+    pieces.push("Temps doux: tenue confortable, veste légère suffisante.");
+  }
+
+  return pieces.join(" ");
+}
+
+function toDateKey(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
