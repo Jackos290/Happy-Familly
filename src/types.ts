@@ -58,6 +58,7 @@ export type Expense = {
   label: string;
   amount: number;
   accountId?: string;
+  categoryId?: string;
   dateISO?: string;
   recurring?: boolean;
   type?: "expense" | "income";

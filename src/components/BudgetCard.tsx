@@ -14,6 +14,18 @@ const euros = new Intl.NumberFormat("fr-FR", {
   maximumFractionDigits: 0,
 });
 
+const EXPENSE_CATEGORIES = [
+  { id: "food", label: "Alimentation" },
+  { id: "home", label: "Maison" },
+  { id: "children", label: "Enfants" },
+  { id: "transport", label: "Transport" },
+  { id: "health", label: "Santé" },
+  { id: "leisure", label: "Loisirs" },
+  { id: "bills", label: "Factures" },
+  { id: "shopping", label: "Achats" },
+  { id: "other", label: "Autre" },
+];
+
 export default function BudgetCard({ data, onDataChange }: Props) {
   const parents = data.familyMembers.slice(0, 2);
   const parentIncomes = data.budget.parentIncomes ?? {};
@@ -24,11 +36,13 @@ export default function BudgetCard({ data, onDataChange }: Props) {
   const [dateISO, setDateISO] = useState(toISODate(new Date()));
   const [transactionType, setTransactionType] = useState<"expense" | "income">("expense");
   const [accountId, setAccountId] = useState("joint");
+  const [categoryId, setCategoryId] = useState("food");
   const [recurring, setRecurring] = useState(false);
   const [movementLabel, setMovementLabel] = useState("");
   const [movementAmount, setMovementAmount] = useState("");
   const [movementDateISO, setMovementDateISO] = useState(toISODate(new Date()));
   const [movementAccountId, setMovementAccountId] = useState("joint");
+  const [movementCategoryId, setMovementCategoryId] = useState("other");
 
   const budget = useMemo(() => {
     const income = parents.reduce((total, parent) => total + (parentIncomes[parent.id] ?? 0), 0) + jointAccountStart;
@@ -75,7 +89,7 @@ export default function BudgetCard({ data, onDataChange }: Props) {
     if (!label.trim() || Number.isNaN(parsedAmount) || parsedAmount <= 0) return;
 
     const signedAmount = transactionType === "income" ? -parsedAmount : parsedAmount;
-    const expense: Expense = { id: createId("expense"), label: label.trim(), amount: signedAmount, accountId, dateISO, recurring, type: transactionType };
+    const expense: Expense = { id: createId("expense"), label: label.trim(), amount: signedAmount, accountId, categoryId: transactionType === "income" ? "income" : categoryId, dateISO, recurring, type: transactionType };
     onDataChange({
       ...data,
       budget: {
@@ -89,6 +103,7 @@ export default function BudgetCard({ data, onDataChange }: Props) {
     setDateISO(toISODate(new Date()));
     setTransactionType("expense");
     setAccountId("joint");
+    setCategoryId("food");
     setRecurring(false);
   }
 
@@ -107,6 +122,7 @@ export default function BudgetCard({ data, onDataChange }: Props) {
             label: movementLabel.trim(),
             amount: signedAmount,
             accountId: movementAccountId,
+            categoryId: type === "add" ? "income" : movementCategoryId,
             dateISO: movementDateISO,
             type: type === "add" ? "income" : "expense",
           },
@@ -117,6 +133,7 @@ export default function BudgetCard({ data, onDataChange }: Props) {
     setMovementAmount("");
     setMovementDateISO(toISODate(new Date()));
     setMovementAccountId("joint");
+    setMovementCategoryId("other");
   }
 
   function deleteExpense(expenseId: string, list: "monthly" | "recurring") {
@@ -162,12 +179,13 @@ export default function BudgetCard({ data, onDataChange }: Props) {
         </label>
       </div>
 
-      <form onSubmit={addExpense} className="grid grid-cols-1 gap-3 rounded-3xl border border-[#3a3463] bg-[#17142c] p-3 xl:grid-cols-[160px_150px_minmax(0,1fr)_110px_150px_160px_56px]">
+      <form onSubmit={addExpense} className="grid grid-cols-1 gap-3 rounded-3xl border border-[#3a3463] bg-[#17142c] p-3 xl:grid-cols-[160px_150px_150px_minmax(0,1fr)_110px_150px_160px_56px]">
         <select className="field" value={transactionType} onChange={(event) => setTransactionType(event.target.value as "expense" | "income")}>
           <option value="expense">Nouvelle dépense</option>
           <option value="income">Nouvelle rentrée</option>
         </select>
         <AccountSelect parents={parents} value={accountId} onChange={setAccountId} />
+        <CategorySelect value={transactionType === "income" ? "income" : categoryId} onChange={setCategoryId} disabled={transactionType === "income"} />
         <input className="field" value={label} onChange={(event) => setLabel(event.target.value)} placeholder={transactionType === "income" ? "Nom de la rentrée" : "Nom de la dépense"} />
         <input className="field" type="number" min="0" step="1" value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="€" />
         <input className="field" type="date" value={dateISO} onChange={(event) => setDateISO(event.target.value)} aria-label="Date de débit" />
@@ -180,11 +198,12 @@ export default function BudgetCard({ data, onDataChange }: Props) {
         </button>
       </form>
 
-      <div className="grid gap-3 rounded-3xl border border-[#3a3463] bg-[#17142c] p-3 sm:grid-cols-[minmax(0,1fr)_110px_150px_150px_auto_auto]">
+      <div className="grid gap-3 rounded-3xl border border-[#3a3463] bg-[#17142c] p-3 sm:grid-cols-[minmax(0,1fr)_110px_150px_150px_150px_auto_auto]">
         <input className="field" value={movementLabel} onChange={(event) => setMovementLabel(event.target.value)} placeholder="Mouvement d'argent" />
         <input className="field" type="number" min="0" value={movementAmount} onChange={(event) => setMovementAmount(event.target.value)} placeholder="€" />
         <input className="field" type="date" value={movementDateISO} onChange={(event) => setMovementDateISO(event.target.value)} aria-label="Date du mouvement" />
         <AccountSelect parents={parents} value={movementAccountId} onChange={setMovementAccountId} />
+        <CategorySelect value={movementCategoryId} onChange={setMovementCategoryId} />
         <button type="button" onClick={() => addMovement("add")} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-emerald-400 px-4 font-black text-[#151229]">
           <Plus className="h-4 w-4" /> Ajouter
         </button>
@@ -192,6 +211,8 @@ export default function BudgetCard({ data, onDataChange }: Props) {
           <Minus className="h-4 w-4" /> Retirer
         </button>
       </div>
+
+      <CategoryStats expenses={[...data.budget.expenses, ...recurringExpenses]} />
 
       <ExpenseList title="Dépenses du mois" expenses={data.budget.expenses} parents={parents} onDelete={(id) => deleteExpense(id, "monthly")} />
       <ExpenseList title="Dépenses récurrentes" expenses={recurringExpenses} parents={parents} onDelete={(id) => deleteExpense(id, "recurring")} />
@@ -216,6 +237,50 @@ function AccountSelect({ parents, value, onChange }: { parents: AppData["familyM
   );
 }
 
+function CategorySelect({ value, onChange, disabled = false }: { value: string; onChange: (value: string) => void; disabled?: boolean }) {
+  return (
+    <select className="field" value={value} onChange={(event) => onChange(event.target.value)} disabled={disabled} aria-label="Catégorie">
+      {disabled && <option value="income">Rentrée</option>}
+      {!disabled && EXPENSE_CATEGORIES.map((category) => (
+        <option key={category.id} value={category.id}>
+          {category.label}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+function CategoryStats({ expenses }: { expenses: Expense[] }) {
+  const stats = EXPENSE_CATEGORIES.map((category) => ({
+    ...category,
+    total: expenses
+      .filter((expense) => expense.amount > 0)
+      .filter((expense) => (expense.categoryId ?? "other") === category.id)
+      .reduce((total, expense) => total + expense.amount, 0),
+  })).filter((category) => category.total > 0);
+  const max = Math.max(...stats.map((category) => category.total), 1);
+
+  return (
+    <section className="rounded-3xl border border-[#3a3463] bg-[#17142c] p-4 text-white">
+      <h3 className="font-black">Stats par catégorie</h3>
+      <div className="mt-3 grid gap-2 md:grid-cols-2">
+        {stats.map((category) => (
+          <div key={category.id} className="rounded-2xl border border-[#3a3463] bg-[#211d3d] p-3">
+            <div className="flex items-center justify-between gap-3 text-sm font-black">
+              <span>{category.label}</span>
+              <span className="text-[#ffd38a]">{euros.format(category.total)}</span>
+            </div>
+            <div className="mt-2 h-3 overflow-hidden rounded-full bg-[#34305a]">
+              <div className="h-full rounded-full bg-[#ffd38a]" style={{ width: `${Math.max(8, (category.total / max) * 100)}%` }} />
+            </div>
+          </div>
+        ))}
+        {stats.length === 0 && <p className="rounded-2xl border border-[#3a3463] bg-[#211d3d] px-4 py-3 font-bold text-white/45">Pas encore de dépense catégorisée.</p>}
+      </div>
+    </section>
+  );
+}
+
 function ExpenseList({ title, expenses, parents, onDelete }: { title: string; expenses: Expense[]; parents: AppData["familyMembers"]; onDelete: (id: string) => void }) {
   return (
     <div>
@@ -226,6 +291,7 @@ function ExpenseList({ title, expenses, parents, onDelete }: { title: string; ex
             <span className="min-w-0">
               <span className="block truncate font-semibold text-white/80">{expense.label}</span>
               <span className="block text-xs font-bold text-white/45">{getAccountLabel(expense.accountId, parents)}</span>
+              {expense.amount > 0 && <span className="block text-xs font-bold text-white/45">{getCategoryLabel(expense.categoryId)}</span>}
               {expense.dateISO && <span className="block text-xs font-bold text-white/45">Débit le {formatDate(expense.dateISO)}</span>}
             </span>
             <div className="flex shrink-0 items-center gap-2">
@@ -250,6 +316,11 @@ function ExpenseList({ title, expenses, parents, onDelete }: { title: string; ex
 function getAccountLabel(accountId: string | undefined, parents: AppData["familyMembers"]) {
   if (!accountId || accountId === "joint") return "Compte joint";
   return parents.find((parent) => parent.id === accountId)?.name ?? "Compte joint";
+}
+
+function getCategoryLabel(categoryId: string | undefined) {
+  if (categoryId === "income") return "Rentrée";
+  return EXPENSE_CATEGORIES.find((category) => category.id === categoryId)?.label ?? "Autre";
 }
 
 function Metric({ label, value }: { label: string; value: string }) {
