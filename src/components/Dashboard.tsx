@@ -293,7 +293,7 @@ export default function Dashboard({
         <p className="sr-only" aria-live="polite">
           {tabletModeMessage}
         </p>
-        <section className="grid min-h-0 flex-1 auto-rows-fr gap-3 overflow-hidden lg:grid-cols-12">
+        <section className="grid min-h-0 flex-1 auto-rows-fr gap-3 overflow-hidden lg:grid-cols-12 lg:grid-rows-[minmax(0,1fr)_minmax(0,0.82fr)]">
           <Panel id="calendar" className="lg:col-span-5" icon={<CalendarDays />} title="Calendrier" onExpand={setExpandedPanel}>
             <CalendarSummary data={data} selectedMemberId={selectedMemberId} />
           </Panel>
@@ -318,7 +318,7 @@ export default function Dashboard({
             )}
           </Panel>
 
-          <div className="grid min-h-0 gap-3 lg:col-span-4">
+          <div className="grid min-h-0 gap-3 overflow-hidden lg:col-span-4">
             <Panel id="quote" icon={<Quote />} title="Phrase du jour" onExpand={setExpandedPanel}>
               <QuoteSummary data={data} />
             </Panel>
@@ -377,9 +377,9 @@ function SummaryColumn({
   empty: string;
 }) {
   return (
-    <div className="min-h-0 rounded-3xl border border-[#3a3463] bg-[#17142c] p-3">
+    <div className="min-h-0 overflow-hidden rounded-3xl border border-[#3a3463] bg-[#17142c] p-3">
       <p className="mb-2 text-xs font-black uppercase tracking-[0.16em] text-white/45">{title}</p>
-      <div className="space-y-2">
+      <div className="max-h-full space-y-2 overflow-hidden">
         {items.length === 0 && <p className="text-sm font-bold text-white/45">{empty}</p>}
         {items.map((item) => (
           <div key={item.id} className="rounded-2xl border border-[#3a3463] bg-[#211d3d] px-3 py-2 shadow-sm">
@@ -1378,7 +1378,7 @@ function Panel({
   return (
     <article
       onClick={() => onExpand(id)}
-      className={`min-h-0 cursor-pointer rounded-[1.5rem] border border-[#3a3463] bg-[#1d1935] p-4 shadow-glass ${className}`}
+      className={`min-h-0 cursor-pointer overflow-hidden rounded-[1.5rem] border border-[#3a3463] bg-[#1d1935] p-4 shadow-glass ${className}`}
     >
       <button
         onClick={() => onExpand(id)}

@@ -4,6 +4,7 @@ export type FamilyMember = {
   color: string;
   photoUrl?: string;
   googleCalendarUrl?: string;
+  pinCode?: string;
 };
 
 export type CalendarEvent = {
@@ -11,6 +12,7 @@ export type CalendarEvent = {
   title: string;
   date: "today" | "tomorrow";
   dateISO?: string;
+  dateEndISO?: string;
   time: string;
   personId?: string;
   source?: "manual" | "google";

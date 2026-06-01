@@ -1,4 +1,4 @@
-import { Component, useEffect, useRef, useState, type ReactNode } from "react";
+import { Component, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import AccessChooser, { type AccessChoice } from "./components/AccessChooser";
 import Dashboard from "./components/Dashboard";
 import type { AppData } from "./types";
@@ -11,6 +11,7 @@ export default function App() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [syncStatus, setSyncStatus] = useState("Connexion Supabase...");
   const [accessChoice, setAccessChoice] = useState<AccessChoice | null>(null);
+  const [pendingMemberId, setPendingMemberId] = useState<string | null>(null);
   const remoteReadyRef = useRef(false);
   const applyingRemoteRef = useRef(false);
   const pendingLocalSaveRef = useRef(false);
@@ -175,10 +176,33 @@ export default function App() {
     setData(nextData);
   }
 
+  function handleAccessChoice(choice: AccessChoice) {
+    if (choice.type === "dashboard") {
+      setAccessChoice(choice);
+      return;
+    }
+    setPendingMemberId(choice.memberId);
+  }
+
+  function unlockMember(memberId: string) {
+    setPendingMemberId(null);
+    setAccessChoice({ type: "member", memberId });
+  }
+
+  const pendingMember = pendingMemberId ? data.familyMembers.find((member) => member.id === pendingMemberId) : null;
+
   if (!accessChoice) {
     return (
       <AppErrorBoundary>
-        <AccessChooser data={data} onChoose={setAccessChoice} syncStatus={syncStatus} />
+        <AccessChooser data={data} onChoose={handleAccessChoice} syncStatus={syncStatus} />
+        {pendingMember && (
+          <PinGate
+            memberName={pendingMember.name}
+            expectedPin={pendingMember.pinCode ?? "1234"}
+            onCancel={() => setPendingMemberId(null)}
+            onUnlock={() => unlockMember(pendingMember.id)}
+          />
+        )}
       </AppErrorBoundary>
     );
   }
@@ -195,6 +219,62 @@ export default function App() {
         onBackToChooser={() => setAccessChoice(null)}
       />
     </AppErrorBoundary>
+  );
+}
+
+function PinGate({
+  memberName,
+  expectedPin,
+  onCancel,
+  onUnlock,
+}: {
+  memberName: string;
+  expectedPin: string;
+  onCancel: () => void;
+  onUnlock: () => void;
+}) {
+  const [pin, setPin] = useState("");
+  const [error, setError] = useState("");
+
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    if (pin === expectedPin) {
+      onUnlock();
+      return;
+    }
+    setError("Code incorrect");
+    setPin("");
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#151229]/80 p-4 backdrop-blur-sm">
+      <form onSubmit={submit} className="w-full max-w-sm rounded-[2rem] border border-[#3a3463] bg-[#1d1935] p-6 text-white shadow-glass">
+        <p className="font-serif text-lg font-black italic text-[#ffd38a]">Code d'accès</p>
+        <h2 className="mt-2 text-3xl font-black">{memberName}</h2>
+        <input
+          autoFocus
+          className="mt-5 min-h-14 w-full rounded-2xl border border-[#3a3463] bg-[#17142c] px-5 text-center text-3xl font-black tracking-[0.4em] text-white outline-none"
+          value={pin}
+          inputMode="numeric"
+          type="password"
+          maxLength={8}
+          onChange={(event) => {
+            setError("");
+            setPin(event.target.value);
+          }}
+          placeholder="1234"
+        />
+        {error && <p className="mt-3 text-sm font-black text-rose-300">{error}</p>}
+        <div className="mt-5 grid grid-cols-2 gap-3">
+          <button type="button" onClick={onCancel} className="min-h-12 rounded-2xl border border-[#3a3463] bg-[#211d3d] font-black text-white">
+            Annuler
+          </button>
+          <button className="min-h-12 rounded-2xl bg-[#ffd38a] font-black text-[#151229]">
+            Entrer
+          </button>
+        </div>
+      </form>
+    </div>
   );
 }
 

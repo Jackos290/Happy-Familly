@@ -65,6 +65,17 @@ export default function FamilySettings({ data, onDataChange }: Props) {
               onChange={(event) => updatePhoto(member.id, event)}
             />
           </label>
+          <label className="mt-3 block">
+            <span className="mb-1 block text-xs font-black uppercase tracking-[0.14em] text-slate-500">Code d'accès</span>
+            <input
+              className="field"
+              value={member.pinCode ?? "1234"}
+              inputMode="numeric"
+              maxLength={8}
+              onChange={(event) => updateMember(member.id, { pinCode: event.target.value || "1234" })}
+              aria-label={`Code d'accès de ${member.name}`}
+            />
+          </label>
         </div>
       ))}
     </div>

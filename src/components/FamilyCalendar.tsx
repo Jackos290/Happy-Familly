@@ -31,6 +31,7 @@ export default function FamilyCalendar({ data, onDataChange, expanded = false, s
   const [title, setTitle] = useState("");
   const [time, setTime] = useState("17:00");
   const [date, setDate] = useState(toDateKey(new Date()));
+  const [endDate, setEndDate] = useState(toDateKey(new Date()));
   const [personId, setPersonId] = useState(selectedMemberId ?? members[0]?.id ?? "");
   const [recurrence, setRecurrence] = useState<CalendarEvent["recurrence"]>("none");
   const [weekdays, setWeekdays] = useState<number[]>([new Date().getDay()]);
@@ -39,6 +40,7 @@ export default function FamilyCalendar({ data, onDataChange, expanded = false, s
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editDate, setEditDate] = useState("");
+  const [editEndDate, setEditEndDate] = useState("");
   const [editTime, setEditTime] = useState("");
   const [editPersonId, setEditPersonId] = useState("");
 
@@ -92,6 +94,7 @@ export default function FamilyCalendar({ data, onDataChange, expanded = false, s
   function addEvent(event: FormEvent) {
     event.preventDefault();
     const safeDate = normalizeDateKey(date);
+    const safeEndDate = normalizeDateKey(endDate || safeDate);
     const safePersonId = selectedMemberId ?? personId ?? members[0]?.id ?? "";
     if (!title.trim() || !safePersonId) return;
 
@@ -105,6 +108,7 @@ export default function FamilyCalendar({ data, onDataChange, expanded = false, s
           time,
           date: getRelativeDateLabel(safeDate),
           dateISO: safeDate,
+          dateEndISO: safeEndDate,
           personId: safePersonId,
           source: "manual",
           recurrence,
@@ -119,6 +123,7 @@ export default function FamilyCalendar({ data, onDataChange, expanded = false, s
     setSelectedEvent(event);
     setEditTitle(event.title);
     setEditDate(getEventDateKey(event));
+    setEditEndDate(event.dateEndISO ?? getEventDateKey(event));
     setEditTime(event.time === "Toute la journée" ? "08:00" : event.time);
     setEditPersonId(event.personId ?? members[0]?.id ?? "");
   }
@@ -137,6 +142,7 @@ export default function FamilyCalendar({ data, onDataChange, expanded = false, s
               title: editTitle.trim() || item.title,
               date: getRelativeDateLabel(safeEditDate),
               dateISO: safeEditDate,
+              dateEndISO: normalizeDateKey(editEndDate || safeEditDate),
               time: editTime,
               personId: editPersonId || item.personId,
             }
@@ -167,6 +173,7 @@ export default function FamilyCalendar({ data, onDataChange, expanded = false, s
           title={title}
           time={time}
           date={date}
+          endDate={endDate}
           personId={personId}
           recurrence={recurrence}
           weekdays={weekdays}
@@ -175,6 +182,7 @@ export default function FamilyCalendar({ data, onDataChange, expanded = false, s
           onTitleChange={setTitle}
           onTimeChange={setTime}
           onDateChange={setDate}
+          onEndDateChange={setEndDate}
           onPersonChange={setPersonId}
           onRecurrenceChange={setRecurrence}
           onWeekdaysChange={setWeekdays}
@@ -186,10 +194,12 @@ export default function FamilyCalendar({ data, onDataChange, expanded = false, s
             editable={isEditableEvent(selectedEvent, data)}
             title={editTitle}
             date={editDate}
+            endDate={editEndDate}
             time={editTime}
             personId={editPersonId}
             onTitleChange={setEditTitle}
             onDateChange={setEditDate}
+            onEndDateChange={setEditEndDate}
             onTimeChange={setEditTime}
             onPersonChange={setEditPersonId}
             onSave={saveSelectedEvent}
@@ -226,6 +236,7 @@ export default function FamilyCalendar({ data, onDataChange, expanded = false, s
         title={title}
         time={time}
         date={date}
+        endDate={endDate}
         personId={personId}
         recurrence={recurrence}
         weekdays={weekdays}
@@ -234,6 +245,7 @@ export default function FamilyCalendar({ data, onDataChange, expanded = false, s
         onTitleChange={setTitle}
         onTimeChange={setTime}
         onDateChange={setDate}
+        onEndDateChange={setEndDate}
         onPersonChange={setPersonId}
         onRecurrenceChange={setRecurrence}
         onWeekdaysChange={setWeekdays}
@@ -254,10 +266,12 @@ export default function FamilyCalendar({ data, onDataChange, expanded = false, s
           editable={isEditableEvent(selectedEvent, data)}
           title={editTitle}
           date={editDate}
+          endDate={editEndDate}
           time={editTime}
           personId={editPersonId}
           onTitleChange={setEditTitle}
           onDateChange={setEditDate}
+          onEndDateChange={setEditEndDate}
           onTimeChange={setEditTime}
           onPersonChange={setEditPersonId}
           onSave={saveSelectedEvent}
@@ -273,6 +287,7 @@ function CalendarForm({
   title,
   time,
   date,
+  endDate,
   personId,
   recurrence,
   weekdays,
@@ -281,6 +296,7 @@ function CalendarForm({
   onTitleChange,
   onTimeChange,
   onDateChange,
+  onEndDateChange,
   onPersonChange,
   onRecurrenceChange,
   onWeekdaysChange,
@@ -288,6 +304,7 @@ function CalendarForm({
   title: string;
   time: string;
   date: string;
+  endDate: string;
   personId: string;
   recurrence: CalendarEvent["recurrence"];
   weekdays: number[];
@@ -296,6 +313,7 @@ function CalendarForm({
   onTitleChange: (value: string) => void;
   onTimeChange: (value: string) => void;
   onDateChange: (value: string) => void;
+  onEndDateChange: (value: string) => void;
   onPersonChange: (value: string) => void;
   onRecurrenceChange: (value: CalendarEvent["recurrence"]) => void;
   onWeekdaysChange: (value: number[]) => void;
@@ -311,6 +329,7 @@ function CalendarForm({
     <form onSubmit={onSubmit} className="flex flex-wrap items-center gap-3 rounded-3xl bg-white/50 p-3">
       <input className="field min-w-0 flex-[1_1_260px]" value={title} onChange={(event) => onTitleChange(event.target.value)} placeholder="Ajouter un événement ou rendez-vous" />
       <input className="field min-w-36 flex-[1_1_150px]" type="date" value={date} onChange={(event) => onDateChange(event.target.value)} />
+      <input className="field min-w-36 flex-[1_1_150px]" type="date" value={endDate} onChange={(event) => onEndDateChange(event.target.value || date)} title="Date de fin" />
       <input className="field min-w-32 flex-[1_1_130px]" type="time" value={time} onChange={(event) => onTimeChange(event.target.value)} />
       <MemberSelect data={data} value={personId} onChange={onPersonChange} />
       <select className="field min-w-40 flex-[1_1_150px]" value={recurrence ?? "none"} onChange={(event) => onRecurrenceChange(event.target.value as CalendarEvent["recurrence"])}>
@@ -528,10 +547,12 @@ function EventDetail({
   editable,
   title,
   date,
+  endDate,
   time,
   personId,
   onTitleChange,
   onDateChange,
+  onEndDateChange,
   onTimeChange,
   onPersonChange,
   onSave,
@@ -543,10 +564,12 @@ function EventDetail({
   editable: boolean;
   title: string;
   date: string;
+  endDate: string;
   time: string;
   personId: string;
   onTitleChange: (value: string) => void;
   onDateChange: (value: string) => void;
+  onEndDateChange: (value: string) => void;
   onTimeChange: (value: string) => void;
   onPersonChange: (value: string) => void;
   onSave: (event: FormEvent) => void;
@@ -569,6 +592,7 @@ function EventDetail({
             <input className="field" value={title} onChange={(item) => onTitleChange(item.target.value)} />
             <div className="grid gap-3 sm:grid-cols-2">
               <input className="field" type="date" value={date} onChange={(item) => onDateChange(item.target.value)} />
+              <input className="field" type="date" value={endDate} onChange={(item) => onEndDateChange(item.target.value || date)} />
               <input className="field" type="time" value={time} onChange={(item) => onTimeChange(item.target.value)} />
             </div>
             <MemberSelect data={data} value={personId} onChange={onPersonChange} />
@@ -643,16 +667,26 @@ function expandRecurringEvents(events: CalendarEvent[], start: Date, end: Date) 
 
   events.forEach((event) => {
     if (event.recurrence !== "weekly") {
-      expanded.push(event);
+      const eventStartKey = getEventDateKey(event);
+      const eventEndKey = normalizeDateKey(event.dateEndISO ?? eventStartKey);
+      const cursor = atNoon(start);
+      while (toDateKey(cursor) <= endKey) {
+        const cursorKey = toDateKey(cursor);
+        if (cursorKey >= eventStartKey && cursorKey <= eventEndKey) {
+          expanded.push({ ...event, date: getRelativeDateLabel(cursorKey), dateISO: cursorKey });
+        }
+        cursor.setDate(cursor.getDate() + 1);
+      }
       return;
     }
 
     const firstDateKey = getEventDateKey(event);
+    const recurrenceEndKey = normalizeDateKey(event.dateEndISO ?? firstDateKey);
     const activeWeekdays = normalizeWeekdays(event.weekdays ?? [], firstDateKey);
     const cursor = atNoon(start);
     while (toDateKey(cursor) <= endKey) {
       const cursorKey = toDateKey(cursor);
-      if (cursorKey >= firstDateKey && cursorKey >= startKey && activeWeekdays.includes(cursor.getDay())) {
+      if (cursorKey >= firstDateKey && cursorKey <= recurrenceEndKey && cursorKey >= startKey && activeWeekdays.includes(cursor.getDay())) {
         expanded.push({
           ...event,
           date: getRelativeDateLabel(cursorKey),

@@ -2,10 +2,10 @@ import type { AppData, FamilyMember } from "../types";
 import { getDailyQuote } from "../utils/dailyQuote";
 
 export const familyMembers: FamilyMember[] = [
-  { id: "papa", name: "Papa", color: "bg-sky-100 text-sky-800" },
-  { id: "maman", name: "Maman", color: "bg-rose-100 text-rose-800" },
-  { id: "enfant-1", name: "Enfant 1", color: "bg-emerald-100 text-emerald-800" },
-  { id: "enfant-2", name: "Enfant 2", color: "bg-violet-100 text-violet-800" },
+  { id: "papa", name: "Papa", color: "bg-sky-100 text-sky-800", pinCode: "1234" },
+  { id: "maman", name: "Maman", color: "bg-rose-100 text-rose-800", pinCode: "1234" },
+  { id: "enfant-1", name: "Enfant 1", color: "bg-emerald-100 text-emerald-800", pinCode: "1234" },
+  { id: "enfant-2", name: "Enfant 2", color: "bg-violet-100 text-violet-800", pinCode: "1234" },
 ];
 
 export const defaultData: AppData = {
