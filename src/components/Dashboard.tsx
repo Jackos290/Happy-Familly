@@ -226,24 +226,16 @@ export default function Dashboard({
   return (
     <main className="h-screen overflow-hidden bg-[#151229] px-3 py-3 text-white sm:px-5">
       <div className="mx-auto flex h-full max-w-[1600px] flex-col gap-3">
-        <header className="flex shrink-0 flex-col gap-3 rounded-[1.4rem] border border-[#3a3463] bg-[#1d1935] px-4 py-3 shadow-glass backdrop-blur-2xl lg:flex-row lg:items-center lg:justify-between lg:px-5">
-          <div className="flex flex-wrap items-center gap-3">
-            <p className="min-w-36 font-serif text-xl font-black italic capitalize text-[#ffd38a]">{now}</p>
+        <header className="flex min-h-[5.25rem] shrink-0 items-center justify-between gap-3 overflow-hidden rounded-[1.4rem] border border-[#3a3463] bg-[#1d1935] px-4 py-3 shadow-glass backdrop-blur-2xl lg:px-5">
+          <div className="flex min-w-0 flex-1 items-center gap-3 overflow-hidden">
+            <p className="shrink-0 font-serif text-xl font-black italic capitalize text-[#ffd38a]">{now}</p>
             {nextHours.length > 0 && (
-              <div className="flex flex-wrap gap-2">
+              <div className="flex min-w-0 gap-2 overflow-hidden">
                 {nextHours.map((hour) => <ForecastPill key={hour.time} hour={hour} />)}
               </div>
             )}
-            <div className="flex flex-wrap gap-2">
-              {data.familyMembers.filter((member) => isChildMember(data, member.id)).map((member) => (
-                <span key={member.id} className="inline-flex items-center gap-2 rounded-2xl border border-[#3a3463] bg-[#211d3d] px-3 py-2 text-sm font-black text-[#ffd38a]">
-                  <AvatarBubble member={member} />
-                  {formatMinutesAsTime(getRewardMinutes(data, member.id))}
-                </span>
-              ))}
-            </div>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex shrink-0 items-center gap-3">
             {onBackToChooser && (
               <button onClick={onBackToChooser} className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[#34305a] text-white" title="Changer d'espace">
                 <Home className="h-5 w-5" />
@@ -358,7 +350,7 @@ function CalendarSummary({ data, selectedMemberId }: { data: AppData; selectedMe
   const tomorrowEvents = events.filter((event) => (event.dateISO ? event.dateISO === tomorrowISO : event.date === "tomorrow")).slice(0, 3);
 
   return (
-    <div className="grid h-full min-h-0 grid-cols-2 gap-3">
+    <div className="grid h-full min-h-0 grid-cols-2 items-stretch gap-3">
       <SummaryColumn title="Aujourd'hui" items={todayEvents} data={data} empty="Rien prévu" />
       <SummaryColumn title="Demain" items={tomorrowEvents} data={data} empty="Rien prévu" />
     </div>
@@ -377,7 +369,7 @@ function SummaryColumn({
   empty: string;
 }) {
   return (
-    <div className="min-h-0 overflow-hidden rounded-3xl border border-[#3a3463] bg-[#17142c] p-3">
+    <div className="flex min-h-0 flex-col justify-center overflow-hidden rounded-3xl border border-[#3a3463] bg-[#17142c] p-3">
       <p className="mb-2 text-xs font-black uppercase tracking-[0.16em] text-white/45">{title}</p>
       <div className="max-h-full space-y-2 overflow-hidden">
         {items.length === 0 && <p className="text-sm font-bold text-white/45">{empty}</p>}
@@ -403,12 +395,12 @@ function TasksSummary({ data, selectedMemberId }: { data: AppData; selectedMembe
   const doneTasks = data.tasks.filter((task) => task.done && (!selectedMemberId || task.personId === selectedMemberId));
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3">
+    <div className="flex h-full min-h-0 flex-col justify-center gap-3">
       <div className="grid grid-cols-2 gap-2">
         <MetricPill label="À faire" value={todoTasks.length} />
         <MetricPill label="Faites" value={doneTasks.length} />
       </div>
-      <div className="grid min-h-0 flex-1 grid-cols-2 gap-2">
+      <div className="grid min-h-0 max-h-[76%] grid-cols-2 gap-2">
         {members.slice(0, 4).map((member) => {
           const memberTasks = data.tasks.filter((task) => task.personId === member.id && !task.done).slice(0, 2);
           return (
@@ -435,7 +427,7 @@ function TasksSummary({ data, selectedMemberId }: { data: AppData; selectedMembe
 
 function WeatherSummary({ data }: { data: AppData }) {
   return (
-    <div className="grid h-full min-h-0 gap-3">
+    <div className="grid h-full min-h-0 content-center gap-3">
       <div className="rounded-3xl border border-[#3a3463] bg-[#211d3d] p-4">
         <p className="text-xs font-black uppercase tracking-[0.16em] text-white/45">Aujourd'hui</p>
         <div className="mt-2 flex items-center justify-between gap-3">
@@ -457,12 +449,12 @@ function ShoppingSummary({ data }: { data: AppData }) {
   const done = data.shoppingItems.filter((item) => item.checked);
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3">
+    <div className="flex h-full min-h-0 flex-col justify-center gap-3">
       <div className="grid grid-cols-2 gap-2">
         <MetricPill label="À acheter" value={todo.length} />
         <MetricPill label="Déjà pris" value={done.length} />
       </div>
-      <div className="min-h-0 flex-1 space-y-2 overflow-hidden">
+      <div className="min-h-0 max-h-[68%] space-y-2 overflow-hidden">
         {todo.slice(0, 4).map((item) => (
           <div key={item.id} className="flex items-center gap-3 rounded-2xl border border-[#3a3463] bg-[#211d3d] px-3 py-2">
             {item.photoUrl ? <img src={item.photoUrl} alt={item.label} className="h-9 w-9 rounded-xl object-cover" /> : <ShoppingBasket className="h-5 w-5 text-[#ffd38a]" />}
@@ -484,7 +476,7 @@ function BudgetSummary({ data }: { data: AppData }) {
   const color = percent < 70 ? "bg-emerald-500" : percent < 90 ? "bg-amber-500" : "bg-rose-500";
 
   return (
-    <div className="h-full rounded-3xl border border-[#3a3463] bg-[#17142c] p-4">
+    <div className="flex h-full flex-col justify-center rounded-3xl border border-[#3a3463] bg-[#17142c] p-4">
       <p className="text-xs font-black uppercase tracking-[0.16em] text-white/45">Budget mensuel</p>
       <div className="mt-4 h-7 overflow-hidden rounded-full bg-[#34305a]">
         <div className={`h-full rounded-full ${color}`} style={{ width: `${percent}%` }} />
@@ -513,19 +505,40 @@ function RewardSummary({ data, memberId }: { data: AppData; memberId: string }) 
 }
 
 function QuoteSummary({ data }: { data: AppData }) {
-  return <p className="line-clamp-3 rounded-3xl border border-[#3a3463] bg-[#17142c] p-4 text-xl font-black leading-tight text-white">{data.positiveQuote}</p>;
+  return (
+    <div className="flex h-full items-center">
+      <p className="line-clamp-3 w-full rounded-3xl border border-[#3a3463] bg-[#17142c] p-4 text-xl font-black leading-tight text-white">{data.positiveQuote}</p>
+    </div>
+  );
 }
 
 function ThanksSummary({ data }: { data: AppData }) {
+  const children = data.familyMembers.filter((member) => isChildMember(data, member.id));
+
   return (
-    <div className="space-y-2">
-      {data.thanksMessages.slice(0, 2).map((message) => (
-        <div key={message.id} className="rounded-2xl border border-[#3a3463] bg-[#211d3d] px-3 py-2">
-          <p className="line-clamp-2 text-sm font-bold text-white/85">{message.text}</p>
-          <p className="mt-1 text-xs font-black text-[#ffd38a]">{message.author}</p>
+    <div className="flex h-full min-h-0 flex-col justify-center gap-2">
+      {children.length > 0 && (
+        <div className="grid grid-cols-2 gap-2">
+          {children.slice(0, 2).map((member) => (
+            <div key={member.id} className="flex items-center justify-between gap-2 rounded-2xl border border-[#3a3463] bg-[#211d3d] px-3 py-2">
+              <AvatarBubble member={member} />
+              <div className="min-w-0 text-right">
+                <p className="truncate text-xs font-black text-white">{member.name}</p>
+                <p className="font-serif text-lg font-black text-[#ffd38a]">{formatMinutesAsTime(getRewardMinutes(data, member.id))}</p>
+              </div>
+            </div>
+          ))}
         </div>
-      ))}
-      {data.thanksMessages.length === 0 && <p className="rounded-2xl border border-[#3a3463] bg-[#211d3d] px-3 py-3 text-sm font-bold text-white/45">Aucun merci pour l'instant</p>}
+      )}
+      <div className="space-y-2 overflow-hidden">
+        {data.thanksMessages.slice(0, 1).map((message) => (
+          <div key={message.id} className="rounded-2xl border border-[#3a3463] bg-[#211d3d] px-3 py-2">
+            <p className="line-clamp-2 text-sm font-bold text-white/85">{message.text}</p>
+            <p className="mt-1 text-xs font-black text-[#ffd38a]">{message.author}</p>
+          </div>
+        ))}
+        {data.thanksMessages.length === 0 && <p className="rounded-2xl border border-[#3a3463] bg-[#211d3d] px-3 py-3 text-sm font-bold text-white/45">Aucun merci pour l'instant</p>}
+      </div>
     </div>
   );
 }
@@ -1378,7 +1391,7 @@ function Panel({
   return (
     <article
       onClick={() => onExpand(id)}
-      className={`min-h-0 cursor-pointer overflow-hidden rounded-[1.5rem] border border-[#3a3463] bg-[#1d1935] p-4 shadow-glass ${className}`}
+      className={`flex min-h-0 cursor-pointer flex-col overflow-hidden rounded-[1.5rem] border border-[#3a3463] bg-[#1d1935] p-4 shadow-glass ${className}`}
     >
       <button
         onClick={() => onExpand(id)}
@@ -1393,7 +1406,7 @@ function Panel({
           <Expand className="h-4 w-4" />
         </span>
       </button>
-      <div className="min-h-0 overflow-hidden" onClick={(event) => event.stopPropagation()}>{children}</div>
+      <div className="min-h-0 flex-1 overflow-hidden" onClick={(event) => event.stopPropagation()}>{children}</div>
     </article>
   );
 }

@@ -21,7 +21,7 @@ export default function FamilySettings({ data, onDataChange }: Props) {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    void resizeImage(file, 512).then((photoUrl) => {
+    void resizeImage(file, 360).then((photoUrl) => {
       updateMember(memberId, { photoUrl });
       event.target.value = "";
     });
@@ -106,7 +106,7 @@ function resizeImage(file: File, maxSize: number) {
         }
 
         context.drawImage(image, 0, 0, width, height);
-        resolve(canvas.toDataURL("image/jpeg", 0.82));
+        resolve(canvas.toDataURL("image/jpeg", 0.76));
       };
 
       image.src = String(reader.result);

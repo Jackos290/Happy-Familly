@@ -60,7 +60,7 @@ export default function ShoppingList({ data, onDataChange, expanded = false }: P
     const file = event.target.files?.[0];
     if (!file) return;
 
-    void resizeImage(file, 720).then((photoUrl) => {
+    void resizeImage(file, 420).then((photoUrl) => {
       onDataChange({
         ...data,
         shoppingItems: data.shoppingItems.map((item) =>

@@ -64,8 +64,8 @@ export async function saveRemoteAppData(data: AppData): Promise<RemoteSaveResult
 function prepareRemoteData(data: AppData): AppData {
   return {
     ...data,
-    familyMembers: (data.familyMembers ?? []).map(({ photoUrl: _photoUrl, ...member }) => member),
-    shoppingItems: (data.shoppingItems ?? []).map(({ photoUrl: _photoUrl, ...item }) => item),
+    familyMembers: data.familyMembers ?? [],
+    shoppingItems: data.shoppingItems ?? [],
   };
 }
 
