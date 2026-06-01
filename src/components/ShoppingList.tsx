@@ -73,6 +73,18 @@ export default function ShoppingList({ data, onDataChange, expanded = false }: P
 
   return (
     <div className="space-y-4">
+      <form onSubmit={addItem} className="grid grid-cols-[minmax(0,1fr)_56px] gap-3 rounded-3xl bg-white/50 p-3">
+        <input
+          className="field"
+          value={label}
+          onChange={(event) => setLabel(event.target.value)}
+          placeholder="Ajouter aux courses"
+        />
+        <button className="icon-button" title="Ajouter aux courses">
+          <Plus className="h-5 w-5" />
+        </button>
+      </form>
+
       {expanded ? (
         <div className="grid gap-4 lg:grid-cols-2">
           <ShoppingGroup
@@ -107,18 +119,6 @@ export default function ShoppingList({ data, onDataChange, expanded = false }: P
           onPreviewPhoto={setPreviewPhoto}
         />
       )}
-
-      <form onSubmit={addItem} className="grid grid-cols-[minmax(0,1fr)_56px] gap-3 rounded-3xl bg-white/50 p-3">
-        <input
-          className="field"
-          value={label}
-          onChange={(event) => setLabel(event.target.value)}
-          placeholder="Ajouter aux courses"
-        />
-        <button className="icon-button" title="Ajouter aux courses">
-          <Plus className="h-5 w-5" />
-        </button>
-      </form>
 
       {previewPhoto && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm">
