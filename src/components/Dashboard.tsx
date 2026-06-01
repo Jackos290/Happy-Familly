@@ -587,10 +587,12 @@ function PersonalApp({
   children?: ReactNode;
 }) {
   const isChild = isChildMember(data, memberId);
+  const isHome = tab === "home";
 
   return (
-    <main className="min-h-screen bg-[#151229] pb-28 text-white">
-      <div className="mx-auto flex max-w-3xl flex-col gap-4 px-4 py-4">
+    <main className={`min-h-screen bg-[#151229] text-white ${isHome ? "pb-4" : "pb-28"}`}>
+      <div className={`mx-auto flex max-w-3xl flex-col gap-4 px-4 ${isHome ? "py-4" : "py-4"}`}>
+        {!isHome && (
         <header className="sticky top-3 z-30 rounded-[1.5rem] border border-white/10 bg-white/10 p-3 shadow-glass backdrop-blur-2xl">
           <div className="flex items-center gap-3">
             <button onClick={onBackToChooser} className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 text-white" title="Changer d'espace">
@@ -616,12 +618,14 @@ function PersonalApp({
             </button>
           </div>
         </header>
+        )}
 
         <section className={tab === "home" ? "" : "rounded-[1.75rem] border border-white/70 bg-white/90 p-4 text-slate-900 shadow-glass backdrop-blur-2xl"}>
           {renderPersonalTab(tab, data, onDataChange, memberId, isChild, memberName, onTabChange)}
         </section>
       </div>
 
+      {!isHome && (
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#151229]/95 px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 shadow-glass backdrop-blur-2xl">
         <div className="mx-auto grid max-w-3xl grid-cols-4 gap-1.5">
           <PersonalNavButton active={tab === "home"} icon={<Home />} label="Accueil" onClick={() => onTabChange("home")} />
@@ -634,6 +638,7 @@ function PersonalApp({
           <PersonalNavButton active={tab === "thanks"} icon={<Heart />} label="Merci" onClick={() => onTabChange("thanks")} />
         </div>
       </nav>
+      )}
 
       {children}
     </main>
@@ -744,13 +749,6 @@ function LauncherHome({
       <div className="pt-2">
         <p className="font-serif text-lg font-black italic text-[#ffd38a]">Famille</p>
         <h1 className="mt-2 text-4xl font-black leading-tight text-white">Bonjour {memberName}</h1>
-        <button
-          onClick={() => onTabChange("home")}
-          className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#2d2851] px-4 py-2 text-lg font-bold text-white"
-        >
-          <Home className="h-5 w-5" />
-          Happy Family
-        </button>
       </div>
 
       <section className="rounded-[2rem] border border-[#3a3463] bg-[#1d1935] p-4 backdrop-blur-xl">
@@ -765,7 +763,7 @@ function LauncherHome({
             <button
               key={`${tile.label}-${tile.tab}`}
               onClick={() => onTabChange(tile.tab)}
-              className={`relative min-h-36 overflow-hidden rounded-[1.4rem] border ${tile.className} p-5 text-left text-white shadow-lg`}
+              className={`relative min-h-40 overflow-hidden rounded-[1.4rem] border ${tile.className} p-5 text-left text-white shadow-lg`}
             >
               <span className="absolute right-4 bottom-4 text-[#ffd38a] [&_svg]:h-16 [&_svg]:w-16">
                 {tile.icon}
