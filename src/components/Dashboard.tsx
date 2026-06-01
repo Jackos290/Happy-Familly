@@ -224,11 +224,11 @@ export default function Dashboard({
   }
 
   return (
-    <main className="h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,#e0f2fe_0,#f8fafc_34%,#fff7ed_72%,#f8fafc_100%)] px-3 py-3 text-slate-900 sm:px-5">
+    <main className="h-screen overflow-hidden bg-[#151229] px-3 py-3 text-white sm:px-5">
       <div className="mx-auto flex h-full max-w-[1600px] flex-col gap-3">
-        <header className="flex shrink-0 flex-col gap-3 rounded-[1.4rem] border border-white/70 bg-white/70 px-4 py-3 shadow-glass backdrop-blur-2xl lg:flex-row lg:items-center lg:justify-between lg:px-5">
+        <header className="flex shrink-0 flex-col gap-3 rounded-[1.4rem] border border-[#3a3463] bg-[#1d1935] px-4 py-3 shadow-glass backdrop-blur-2xl lg:flex-row lg:items-center lg:justify-between lg:px-5">
           <div className="flex flex-wrap items-center gap-3">
-            <p className="min-w-36 text-lg font-black capitalize text-slate-800">{now}</p>
+            <p className="min-w-36 font-serif text-xl font-black italic capitalize text-[#ffd38a]">{now}</p>
             {nextHours.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {nextHours.map((hour) => <ForecastPill key={hour.time} hour={hour} />)}
@@ -237,7 +237,7 @@ export default function Dashboard({
           </div>
           <div className="flex flex-wrap items-center gap-3">
             {onBackToChooser && (
-              <button onClick={onBackToChooser} className="icon-button" title="Changer d'espace">
+              <button onClick={onBackToChooser} className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[#34305a] text-white" title="Changer d'espace">
                 <Home className="h-5 w-5" />
               </button>
             )}
@@ -248,8 +248,8 @@ export default function Dashboard({
                   if (accessMode === "member") return;
                   setSelectedMemberId((current) => (current === member.id ? null : member.id));
                 }}
-                className={`inline-flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-white shadow-sm ring-offset-2 transition ${
-                  selectedMemberId === member.id ? "ring-4 ring-slate-950" : "ring-0 hover:ring-2 hover:ring-slate-200"
+                className={`inline-flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-[#34305a] shadow-sm ring-offset-2 ring-offset-[#151229] transition ${
+                  selectedMemberId === member.id ? "ring-4 ring-[#83efb2]" : "ring-0 hover:ring-2 hover:ring-[#ffd38a]"
                 }`}
                 title={accessMode === "member" ? member.name : `Voir seulement ${member.name}`}
               >
@@ -264,18 +264,18 @@ export default function Dashboard({
             ))}
             <button
               onClick={() => setSettingsOpen(true)}
-              className="icon-button"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[#34305a] text-white"
               title="Options famille"
             >
               <Settings className="h-5 w-5" />
             </button>
-            <span className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-600">
+            <span className="inline-flex items-center gap-2 rounded-full border border-[#3a3463] bg-[#17142c] px-4 py-2 text-sm font-semibold text-white/70">
               <RefreshCw className="h-4 w-4" />
               {syncStatus}
             </span>
             <button
               onClick={toggleTabletMode}
-              className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-slate-950 text-xl text-white transition hover:bg-slate-700"
+              className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[#ffd38a] text-xl text-[#151229] transition hover:bg-[#ffe1a8]"
               title={tabletModeActive ? "Quitter le mode tablette" : "Mode tablette"}
             >
               {tabletModeActive ? "✅" : "📱"}
@@ -369,15 +369,15 @@ function SummaryColumn({
   empty: string;
 }) {
   return (
-    <div className="min-h-0 rounded-3xl bg-white/50 p-3">
-      <p className="mb-2 text-xs font-black uppercase tracking-[0.16em] text-slate-500">{title}</p>
+    <div className="min-h-0 rounded-3xl border border-[#3a3463] bg-[#17142c] p-3">
+      <p className="mb-2 text-xs font-black uppercase tracking-[0.16em] text-white/45">{title}</p>
       <div className="space-y-2">
-        {items.length === 0 && <p className="text-sm font-bold text-slate-500">{empty}</p>}
+        {items.length === 0 && <p className="text-sm font-bold text-white/45">{empty}</p>}
         {items.map((item) => (
-          <div key={item.id} className="rounded-2xl bg-white/75 px-3 py-2 shadow-sm">
+          <div key={item.id} className="rounded-2xl border border-[#3a3463] bg-[#211d3d] px-3 py-2 shadow-sm">
             <div className="flex items-start justify-between gap-2">
-              <p className="line-clamp-2 text-sm font-black text-slate-950">{item.title}</p>
-              <span className="shrink-0 rounded-full bg-slate-100 px-2 py-1 text-xs font-black text-slate-800">{item.time}</span>
+              <p className="line-clamp-2 text-sm font-black text-white">{item.title}</p>
+              <span className="shrink-0 rounded-full bg-[#34305a] px-2 py-1 text-xs font-black text-[#ffd38a]">{item.time}</span>
             </div>
             {item.personId && <MemberMini data={data} memberId={item.personId} />}
           </div>
@@ -404,14 +404,14 @@ function TasksSummary({ data, selectedMemberId }: { data: AppData; selectedMembe
         {members.slice(0, 4).map((member) => {
           const memberTasks = data.tasks.filter((task) => task.personId === member.id && !task.done).slice(0, 2);
           return (
-            <div key={member.id} className="min-h-0 rounded-3xl bg-white/50 p-3">
+            <div key={member.id} className="min-h-0 rounded-3xl border border-[#3a3463] bg-[#17142c] p-3">
               <MemberMini data={data} memberId={member.id} />
               <div className="mt-2 space-y-1.5">
                 {memberTasks.length === 0 ? (
-                  <p className="text-xs font-bold text-slate-500">Aucune tâche</p>
+                  <p className="text-xs font-bold text-white/45">Aucune tâche</p>
                 ) : (
                   memberTasks.map((task) => (
-                    <p key={task.id} className="line-clamp-2 rounded-2xl bg-white/70 px-3 py-2 text-sm font-bold text-slate-800">
+                    <p key={task.id} className="line-clamp-2 rounded-2xl border border-[#3a3463] bg-[#211d3d] px-3 py-2 text-sm font-bold text-white/85">
                       {task.title}
                     </p>
                   ))
@@ -428,16 +428,16 @@ function TasksSummary({ data, selectedMemberId }: { data: AppData; selectedMembe
 function WeatherSummary({ data }: { data: AppData }) {
   return (
     <div className="grid h-full min-h-0 gap-3">
-      <div className="rounded-3xl bg-white/60 p-4">
-        <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">Aujourd'hui</p>
+      <div className="rounded-3xl border border-[#3a3463] bg-[#211d3d] p-4">
+        <p className="text-xs font-black uppercase tracking-[0.16em] text-white/45">Aujourd'hui</p>
         <div className="mt-2 flex items-center justify-between gap-3">
-          <p className="text-5xl font-black text-slate-950">{data.weather.temperature}°C</p>
-          <CloudSun className="h-12 w-12 text-amber-500" />
+          <p className="text-5xl font-black text-white">{data.weather.temperature}°C</p>
+          <CloudSun className="h-12 w-12 text-[#ffd38a]" />
         </div>
-        <p className="mt-2 text-sm font-bold text-slate-600">{data.weather.label ?? (data.weather.condition === "rain" ? "Pluie" : "Soleil")} · vent {data.weather.windKmh} km/h</p>
+        <p className="mt-2 text-sm font-bold text-white/60">{data.weather.label ?? (data.weather.condition === "rain" ? "Pluie" : "Soleil")} · vent {data.weather.windKmh} km/h</p>
       </div>
-      <div className="rounded-3xl bg-slate-950 p-4 text-white">
-        <p className="text-xs font-black uppercase tracking-[0.16em] text-sky-200">Conseil enfants</p>
+      <div className="rounded-3xl border border-[#3a3463] bg-[#17142c] p-4 text-white">
+        <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ffd38a]">Conseil enfants</p>
         <p className="mt-2 text-base font-black">{getClothingAdvice(data.weather.temperature, data.weather.condition)}</p>
       </div>
     </div>
@@ -456,12 +456,12 @@ function ShoppingSummary({ data }: { data: AppData }) {
       </div>
       <div className="min-h-0 flex-1 space-y-2 overflow-hidden">
         {todo.slice(0, 4).map((item) => (
-          <div key={item.id} className="flex items-center gap-3 rounded-2xl bg-white/70 px-3 py-2">
-            {item.photoUrl ? <img src={item.photoUrl} alt={item.label} className="h-9 w-9 rounded-xl object-cover" /> : <ShoppingBasket className="h-5 w-5 text-slate-400" />}
-            <span className="line-clamp-1 text-sm font-black text-slate-800">{item.label}</span>
+          <div key={item.id} className="flex items-center gap-3 rounded-2xl border border-[#3a3463] bg-[#211d3d] px-3 py-2">
+            {item.photoUrl ? <img src={item.photoUrl} alt={item.label} className="h-9 w-9 rounded-xl object-cover" /> : <ShoppingBasket className="h-5 w-5 text-[#ffd38a]" />}
+            <span className="line-clamp-1 text-sm font-black text-white">{item.label}</span>
           </div>
         ))}
-        {todo.length === 0 && <p className="rounded-2xl bg-white/60 px-3 py-3 text-sm font-bold text-slate-500">Liste vide</p>}
+        {todo.length === 0 && <p className="rounded-2xl border border-[#3a3463] bg-[#211d3d] px-3 py-3 text-sm font-bold text-white/45">Liste vide</p>}
       </div>
     </div>
   );
@@ -475,16 +475,16 @@ function BudgetSummary({ data }: { data: AppData }) {
   const color = percent < 70 ? "bg-emerald-500" : percent < 90 ? "bg-amber-500" : "bg-rose-500";
 
   return (
-    <div className="h-full rounded-3xl bg-white/50 p-4">
+    <div className="h-full rounded-3xl border border-[#3a3463] bg-[#17142c] p-4">
       <div className="grid grid-cols-3 gap-2 text-center">
         <MetricPill label="Budget" value={`${data.budget.monthlyTotal}€`} />
         <MetricPill label="Dépensé" value={`${spent}€`} />
         <MetricPill label="Reste" value={`${remaining}€`} />
       </div>
-      <div className="mt-4 h-4 overflow-hidden rounded-full bg-slate-100">
+      <div className="mt-4 h-4 overflow-hidden rounded-full bg-[#34305a]">
         <div className={`h-full rounded-full ${color}`} style={{ width: `${percent}%` }} />
       </div>
-      <p className="mt-2 text-right text-sm font-black text-slate-600">{percent}% utilisé</p>
+      <p className="mt-2 text-right text-sm font-black text-white/60">{percent}% utilisé</p>
     </div>
   );
 }
@@ -495,40 +495,40 @@ function RewardSummary({ data, memberId }: { data: AppData; memberId: string }) 
 
   return (
     <div className="grid h-full min-h-0 gap-3">
-      <div className="rounded-3xl bg-amber-50 p-4">
-        <p className="text-xs font-black uppercase tracking-[0.16em] text-amber-700">Temps écran gagné</p>
-        <p className="mt-2 text-5xl font-black text-slate-950">{minutes} min</p>
+      <div className="rounded-3xl border border-[#3a3463] bg-[#211d3d] p-4">
+        <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ffd38a]">Temps écran gagné</p>
+        <p className="mt-2 font-serif text-5xl font-black text-[#ffd38a]">{minutes} min</p>
       </div>
-      <div className="rounded-3xl bg-white/60 p-4">
-        <p className="text-sm font-black text-slate-700">{remainingTasks.length} tâche(s) pour gagner du temps</p>
+      <div className="rounded-3xl border border-[#3a3463] bg-[#17142c] p-4">
+        <p className="text-sm font-black text-white/70">{remainingTasks.length} tâche(s) pour gagner du temps</p>
       </div>
     </div>
   );
 }
 
 function QuoteSummary({ data }: { data: AppData }) {
-  return <p className="line-clamp-3 rounded-3xl bg-white/50 p-4 text-xl font-black leading-tight text-slate-950">{data.positiveQuote}</p>;
+  return <p className="line-clamp-3 rounded-3xl border border-[#3a3463] bg-[#17142c] p-4 text-xl font-black leading-tight text-white">{data.positiveQuote}</p>;
 }
 
 function ThanksSummary({ data }: { data: AppData }) {
   return (
     <div className="space-y-2">
       {data.thanksMessages.slice(0, 2).map((message) => (
-        <div key={message.id} className="rounded-2xl bg-white/60 px-3 py-2">
-          <p className="line-clamp-2 text-sm font-bold text-slate-800">{message.text}</p>
-          <p className="mt-1 text-xs font-black text-rose-500">{message.author}</p>
+        <div key={message.id} className="rounded-2xl border border-[#3a3463] bg-[#211d3d] px-3 py-2">
+          <p className="line-clamp-2 text-sm font-bold text-white/85">{message.text}</p>
+          <p className="mt-1 text-xs font-black text-[#ffd38a]">{message.author}</p>
         </div>
       ))}
-      {data.thanksMessages.length === 0 && <p className="rounded-2xl bg-white/60 px-3 py-3 text-sm font-bold text-slate-500">Aucun merci pour l'instant</p>}
+      {data.thanksMessages.length === 0 && <p className="rounded-2xl border border-[#3a3463] bg-[#211d3d] px-3 py-3 text-sm font-bold text-white/45">Aucun merci pour l'instant</p>}
     </div>
   );
 }
 
 function MetricPill({ label, value }: { label: string; value: number | string }) {
   return (
-    <div className="rounded-2xl bg-white/75 px-3 py-2 text-center shadow-sm">
-      <p className="text-[0.65rem] font-black uppercase tracking-[0.12em] text-slate-500">{label}</p>
-      <p className="mt-1 text-lg font-black text-slate-950">{value}</p>
+    <div className="rounded-2xl border border-[#3a3463] bg-[#211d3d] px-3 py-2 text-center shadow-sm">
+      <p className="text-[0.65rem] font-black uppercase tracking-[0.12em] text-white/45">{label}</p>
+      <p className="mt-1 text-lg font-black text-white">{value}</p>
     </div>
   );
 }
@@ -538,8 +538,8 @@ function MemberMini({ data, memberId }: { data: AppData; memberId: string }) {
   if (!member) return null;
 
   return (
-    <span className="mt-2 inline-flex max-w-full items-center gap-1.5 rounded-full bg-white/80 px-2 py-1 text-xs font-black text-slate-800 shadow-sm">
-      <span className="inline-flex h-6 w-6 shrink-0 overflow-hidden rounded-full bg-white">
+    <span className="mt-2 inline-flex max-w-full items-center gap-1.5 rounded-full border border-[#3a3463] bg-[#211d3d] px-2 py-1 text-xs font-black text-white shadow-sm">
+      <span className="inline-flex h-6 w-6 shrink-0 overflow-hidden rounded-full bg-[#34305a]">
         {member.photoUrl ? (
           <img src={member.photoUrl} alt={member.name} className="h-full w-full object-cover" />
         ) : (
@@ -1318,7 +1318,7 @@ function getHourlyEmoji(rain: number) {
 
 function ForecastPill({ hour }: { hour: HourlyForecast }) {
   return (
-    <span className="flex min-w-14 flex-col items-center rounded-2xl bg-white/80 px-3 py-1.5 text-xs font-black text-slate-700 shadow-sm">
+    <span className="flex min-w-14 flex-col items-center rounded-2xl border border-[#3a3463] bg-[#211d3d] px-3 py-1.5 text-xs font-black text-white shadow-sm">
       <span>{hour.time}</span>
       <span className="text-xl leading-5">{getHourlyEmoji(hour.rain)}</span>
     </span>
@@ -1330,11 +1330,11 @@ function RewardCounter({ data, memberId }: { data: AppData; memberId: string }) 
   const minutes = getRewardMinutes(data, memberId);
 
   return (
-    <div className="rounded-3xl bg-white/50 p-5">
-      <p className="text-sm font-black uppercase tracking-[0.16em] text-slate-500">Temps gagné</p>
-      <p className="mt-3 text-5xl font-black text-slate-950">{minutes}</p>
-      <p className="mt-1 text-lg font-bold text-slate-600">minutes</p>
-      <p className="mt-4 rounded-2xl bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">
+    <div className="rounded-3xl border border-[#3a3463] bg-[#17142c] p-5 text-white">
+      <p className="text-sm font-black uppercase tracking-[0.16em] text-[#ffd38a]">Temps gagné</p>
+      <p className="mt-3 font-serif text-5xl font-black text-[#ffd38a]">{minutes}</p>
+      <p className="mt-1 text-lg font-bold text-white/60">minutes</p>
+      <p className="mt-4 rounded-2xl border border-[#3a3463] bg-[#211d3d] px-4 py-3 text-sm font-bold text-white/75">
         {member?.name ?? "Enfant"} gagne du temps quand ses tâches sont validées.
       </p>
     </div>
@@ -1373,18 +1373,18 @@ function Panel({
   return (
     <article
       onClick={() => onExpand(id)}
-      className={`glass-panel min-h-0 cursor-pointer rounded-[1.5rem] p-4 ${className}`}
+      className={`min-h-0 cursor-pointer rounded-[1.5rem] border border-[#3a3463] bg-[#1d1935] p-4 shadow-glass ${className}`}
     >
       <button
         onClick={() => onExpand(id)}
         className="mb-3 flex w-full items-center gap-3 text-left"
         title={`Ouvrir ${title} en grand`}
       >
-        <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-950 text-white [&_svg]:h-5 [&_svg]:w-5">
+        <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[#34305a] text-[#ffd38a] [&_svg]:h-5 [&_svg]:w-5">
           {icon}
         </span>
-        <h2 className="flex-1 text-lg font-black text-slate-950">{title}</h2>
-        <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white text-slate-500">
+        <h2 className="flex-1 text-lg font-black text-white">{title}</h2>
+        <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#17142c] text-white/55">
           <Expand className="h-4 w-4" />
         </span>
       </button>
@@ -1405,11 +1405,11 @@ function Modal({
   wide?: boolean;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm">
-      <section className={`max-h-[92vh] w-full overflow-auto rounded-[2rem] bg-slate-50 p-5 shadow-glass ${wide ? "max-w-6xl" : "max-w-3xl"}`}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#151229]/75 p-4 backdrop-blur-sm">
+      <section className={`max-h-[92vh] w-full overflow-auto rounded-[2rem] border border-[#3a3463] bg-[#1d1935] p-5 text-white shadow-glass ${wide ? "max-w-6xl" : "max-w-3xl"}`}>
         <div className="mb-5 flex items-center justify-between gap-4">
-          <h2 className="text-2xl font-black text-slate-950">{title}</h2>
-          <button onClick={onClose} className="icon-button" title="Fermer">
+          <h2 className="text-2xl font-black text-white">{title}</h2>
+          <button onClick={onClose} className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[#34305a] text-white" title="Fermer">
             <X className="h-5 w-5" />
           </button>
         </div>
