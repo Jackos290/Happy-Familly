@@ -3,7 +3,7 @@ import AccessChooser, { type AccessChoice } from "./components/AccessChooser";
 import Dashboard from "./components/Dashboard";
 import type { AppData } from "./types";
 import { loadGoogleCalendarEvents } from "./utils/googleCalendar";
-import { loadAppData, saveAppData } from "./utils/localStorage";
+import { loadAppData, removeSeedBudgetExpenses, saveAppData } from "./utils/localStorage";
 import { loadRemoteAppData, saveRemoteAppData } from "./utils/remoteData";
 
 export default function App() {
@@ -173,7 +173,7 @@ export default function App() {
 
   function handleDataChange(nextData: AppData) {
     pendingLocalSaveRef.current = true;
-    setData(nextData);
+    setData(removeSeedBudgetExpenses(nextData));
   }
 
   function handleAccessChoice(choice: AccessChoice) {
@@ -282,7 +282,7 @@ function mergeLocalAssets(remoteData: AppData, localData: AppData): AppData {
   const localMembersById = new Map((localData.familyMembers ?? []).map((member) => [member.id, member]));
   const localShoppingById = new Map((localData.shoppingItems ?? []).map((item) => [item.id, item]));
 
-  return {
+  return removeSeedBudgetExpenses({
     ...remoteData,
     familyMembers: (remoteData.familyMembers ?? []).map((member) => ({
       ...member,
@@ -292,7 +292,7 @@ function mergeLocalAssets(remoteData: AppData, localData: AppData): AppData {
       ...item,
       photoUrl: item.photoUrl ?? localShoppingById.get(item.id)?.photoUrl,
     })),
-  };
+  });
 }
 
 class AppErrorBoundary extends Component<{ children: ReactNode }, { error: string | null }> {

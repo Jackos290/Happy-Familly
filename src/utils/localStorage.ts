@@ -10,17 +10,28 @@ export function loadAppData(): AppData {
     const rawData = window.localStorage.getItem(STORAGE_KEY);
     if (!rawData) {
       OLD_STORAGE_KEYS.forEach((key) => window.localStorage.removeItem(key));
-      return defaultData;
+      return removeSeedBudgetExpenses(defaultData);
     }
 
-    return {
+    return removeSeedBudgetExpenses({
       ...defaultData,
       ...JSON.parse(rawData),
       positiveQuote: getDailyQuote(),
-    };
+    });
   } catch {
-    return defaultData;
+    return removeSeedBudgetExpenses(defaultData);
   }
+}
+
+export function removeSeedBudgetExpenses(data: AppData): AppData {
+  const seedExpenseIds = new Set(["expense-1", "expense-2", "expense-3"]);
+  return {
+    ...data,
+    budget: {
+      ...data.budget,
+      expenses: (data.budget.expenses ?? []).filter((expense) => !seedExpenseIds.has(expense.id)),
+    },
+  };
 }
 
 export function saveAppData(data: AppData) {

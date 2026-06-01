@@ -21,9 +21,11 @@ export default function BudgetCard({ data, onDataChange }: Props) {
   const recurringExpenses = data.budget.recurringExpenses ?? [];
   const [label, setLabel] = useState("");
   const [amount, setAmount] = useState("");
+  const [dateISO, setDateISO] = useState(toISODate(new Date()));
   const [recurring, setRecurring] = useState(false);
   const [movementLabel, setMovementLabel] = useState("");
   const [movementAmount, setMovementAmount] = useState("");
+  const [movementDateISO, setMovementDateISO] = useState(toISODate(new Date()));
 
   const budget = useMemo(() => {
     const income = parents.reduce((total, parent) => total + (parentIncomes[parent.id] ?? 0), 0) + jointAccountStart;
@@ -69,7 +71,7 @@ export default function BudgetCard({ data, onDataChange }: Props) {
     const parsedAmount = Number(amount);
     if (!label.trim() || Number.isNaN(parsedAmount) || parsedAmount <= 0) return;
 
-    const expense: Expense = { id: createId("expense"), label: label.trim(), amount: parsedAmount, recurring };
+    const expense: Expense = { id: createId("expense"), label: label.trim(), amount: parsedAmount, dateISO, recurring };
     onDataChange({
       ...data,
       budget: {
@@ -80,6 +82,7 @@ export default function BudgetCard({ data, onDataChange }: Props) {
     });
     setLabel("");
     setAmount("");
+    setDateISO(toISODate(new Date()));
     setRecurring(false);
   }
 
@@ -97,6 +100,7 @@ export default function BudgetCard({ data, onDataChange }: Props) {
             id: createId("movement"),
             label: movementLabel.trim(),
             amount: signedAmount,
+            dateISO: movementDateISO,
             type: type === "add" ? "income" : "expense",
           },
         ],
@@ -104,6 +108,7 @@ export default function BudgetCard({ data, onDataChange }: Props) {
     });
     setMovementLabel("");
     setMovementAmount("");
+    setMovementDateISO(toISODate(new Date()));
   }
 
   return (
@@ -138,9 +143,10 @@ export default function BudgetCard({ data, onDataChange }: Props) {
         </label>
       </div>
 
-      <form onSubmit={addExpense} className="grid grid-cols-1 gap-3 rounded-3xl border border-[#3a3463] bg-[#17142c] p-3 xl:grid-cols-[minmax(0,1fr)_110px_160px_56px]">
+      <form onSubmit={addExpense} className="grid grid-cols-1 gap-3 rounded-3xl border border-[#3a3463] bg-[#17142c] p-3 xl:grid-cols-[minmax(0,1fr)_110px_150px_160px_56px]">
         <input className="field" value={label} onChange={(event) => setLabel(event.target.value)} placeholder="Nouvelle dépense" />
         <input className="field" type="number" min="0" step="1" value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="€" />
+        <input className="field" type="date" value={dateISO} onChange={(event) => setDateISO(event.target.value)} aria-label="Date de débit" />
         <label className="flex min-h-12 items-center gap-2 rounded-2xl bg-white px-4 font-bold text-slate-700">
           <input type="checkbox" checked={recurring} onChange={(event) => setRecurring(event.target.checked)} />
           Tous les mois
@@ -150,9 +156,10 @@ export default function BudgetCard({ data, onDataChange }: Props) {
         </button>
       </form>
 
-      <div className="grid gap-3 rounded-3xl border border-[#3a3463] bg-[#17142c] p-3 sm:grid-cols-[minmax(0,1fr)_110px_auto_auto]">
+      <div className="grid gap-3 rounded-3xl border border-[#3a3463] bg-[#17142c] p-3 sm:grid-cols-[minmax(0,1fr)_110px_150px_auto_auto]">
         <input className="field" value={movementLabel} onChange={(event) => setMovementLabel(event.target.value)} placeholder="Mouvement d'argent" />
         <input className="field" type="number" min="0" value={movementAmount} onChange={(event) => setMovementAmount(event.target.value)} placeholder="€" />
+        <input className="field" type="date" value={movementDateISO} onChange={(event) => setMovementDateISO(event.target.value)} aria-label="Date du mouvement" />
         <button type="button" onClick={() => addMovement("add")} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-emerald-400 px-4 font-black text-[#151229]">
           <Plus className="h-4 w-4" /> Ajouter
         </button>
@@ -178,8 +185,11 @@ function ExpenseList({ title, expenses }: { title: string; expenses: Expense[] }
       <div className="max-h-36 space-y-2 overflow-auto pr-1">
         {expenses.map((expense) => (
           <div key={expense.id} className="flex items-center justify-between rounded-2xl border border-[#3a3463] bg-[#211d3d] px-4 py-3">
-            <span className="font-semibold text-white/80">{expense.label}</span>
-            <span className={`font-bold ${expense.amount < 0 ? "text-emerald-300" : "text-white"}`}>{euros.format(expense.amount)}</span>
+            <span className="min-w-0">
+              <span className="block truncate font-semibold text-white/80">{expense.label}</span>
+              {expense.dateISO && <span className="block text-xs font-bold text-white/45">Débit le {formatDate(expense.dateISO)}</span>}
+            </span>
+            <span className={`shrink-0 font-bold ${expense.amount < 0 ? "text-emerald-300" : "text-white"}`}>{euros.format(expense.amount)}</span>
           </div>
         ))}
         {expenses.length === 0 && <p className="rounded-2xl border border-[#3a3463] bg-[#211d3d] px-4 py-3 font-bold text-white/45">Rien ici.</p>}
@@ -195,4 +205,15 @@ function Metric({ label, value }: { label: string; value: string }) {
       <p className="mt-1 text-lg font-black text-white">{value}</p>
     </div>
   );
+}
+
+function toISODate(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat("fr-FR", { day: "2-digit", month: "2-digit" }).format(new Date(value));
 }

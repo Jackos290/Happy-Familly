@@ -68,6 +68,7 @@ export default function Dashboard({
   const [tabletModeMessage, setTabletModeMessage] = useState("Prêt pour la tablette");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [expandedPanel, setExpandedPanel] = useState<PanelId | null>(null);
+  const [lockedPanel, setLockedPanel] = useState<PanelId | null>(null);
   const [nextHours, setNextHours] = useState<HourlyForecast[]>([]);
   const [salonWeather, setSalonWeather] = useState<Weather>(data.weather);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(initialMemberId);
@@ -198,6 +199,15 @@ export default function Dashboard({
     ? data.familyMembers.find((member) => member.id === selectedMemberId)
     : null;
   const headerMembers = accessMode === "member" && selectedMember ? [selectedMember] : data.familyMembers;
+  const canEditPins = accessMode === "member" && Boolean(selectedMember && !isChildMember(data, selectedMember.id));
+
+  function openPanel(panel: PanelId) {
+    if (accessMode === "dashboard" && selectedMember) {
+      setLockedPanel(panel);
+      return;
+    }
+    setExpandedPanel(panel);
+  }
 
   if (accessMode === "member" && selectedMember) {
     return (
@@ -216,7 +226,7 @@ export default function Dashboard({
       >
         {settingsOpen && (
           <Modal title="Options famille" onClose={() => setSettingsOpen(false)}>
-            <FamilySettings data={data} onDataChange={onDataChange} />
+            <FamilySettings data={data} onDataChange={onDataChange} canEditPins={canEditPins} />
           </Modal>
         )}
       </PersonalApp>
@@ -286,23 +296,23 @@ export default function Dashboard({
           {tabletModeMessage}
         </p>
         <section className="grid min-h-0 flex-1 auto-rows-fr gap-3 overflow-hidden lg:grid-cols-12 lg:grid-rows-[minmax(0,1fr)_minmax(0,0.62fr)]">
-          <Panel id="calendar" className="lg:col-span-5" icon={<CalendarDays />} title="Calendrier" onExpand={setExpandedPanel}>
+          <Panel id="calendar" className="lg:col-span-5" icon={<CalendarDays />} title="Calendrier" onExpand={openPanel}>
             <CalendarSummary data={data} selectedMemberId={selectedMemberId} />
           </Panel>
 
-          <Panel id="tasks" className="lg:col-span-4" icon={<CheckSquare />} title="Tâches" onExpand={setExpandedPanel}>
+          <Panel id="tasks" className="lg:col-span-4" icon={<CheckSquare />} title="Tâches" onExpand={openPanel}>
             <TasksSummary data={data} selectedMemberId={selectedMemberId} />
           </Panel>
 
-          <Panel id="weather" className="lg:col-span-3" icon={<SunMedium />} title="Météo Gorcy" onExpand={setExpandedPanel}>
+          <Panel id="weather" className="lg:col-span-3" icon={<SunMedium />} title="Météo Gorcy" onExpand={openPanel}>
             <WeatherSummary weather={salonWeather} />
           </Panel>
 
-          <Panel id="shopping" className="lg:col-span-4" icon={<ShoppingBasket />} title="Courses" onExpand={setExpandedPanel}>
+          <Panel id="shopping" className="lg:col-span-4" icon={<ShoppingBasket />} title="Courses" onExpand={openPanel}>
             <ShoppingSummary data={data} />
           </Panel>
 
-          <Panel id="budget" className="lg:col-span-4" icon={<PiggyBank />} title={selectedMemberIsChild ? "Récompenses" : "Budget"} onExpand={setExpandedPanel}>
+          <Panel id="budget" className="lg:col-span-4" icon={<PiggyBank />} title={selectedMemberIsChild ? "Récompenses" : "Budget"} onExpand={openPanel}>
             {selectedMemberIsChild && selectedMemberId ? (
               <RewardSummary data={data} memberId={selectedMemberId} />
             ) : (
@@ -311,7 +321,7 @@ export default function Dashboard({
           </Panel>
 
           <div className="grid min-h-0 gap-3 overflow-hidden lg:col-span-4">
-            <Panel id="thanks" icon={<Heart />} title="Merci" onExpand={setExpandedPanel}>
+            <Panel id="thanks" icon={<Heart />} title="Merci" onExpand={openPanel}>
               <ThanksSummary data={data} />
             </Panel>
           </div>
@@ -320,8 +330,20 @@ export default function Dashboard({
 
       {settingsOpen && (
         <Modal title="Options famille" onClose={() => setSettingsOpen(false)}>
-          <FamilySettings data={data} onDataChange={onDataChange} />
+          <FamilySettings data={data} onDataChange={onDataChange} canEditPins={canEditPins} />
         </Modal>
+      )}
+
+      {lockedPanel && selectedMember && (
+        <PanelPinGate
+          member={selectedMember}
+          title={getPanelTitle(lockedPanel)}
+          onCancel={() => setLockedPanel(null)}
+          onUnlock={() => {
+            setExpandedPanel(lockedPanel);
+            setLockedPanel(null);
+          }}
+        />
       )}
 
       {expandedPanel && (
@@ -366,9 +388,9 @@ function SummaryColumn({
   empty: string;
 }) {
   return (
-    <div className="flex min-h-0 flex-col justify-center overflow-hidden rounded-3xl border border-[#3a3463] bg-[#17142c] p-3">
+    <div className="flex min-h-0 flex-col justify-center overflow-auto rounded-3xl border border-[#3a3463] bg-[#17142c] p-3">
       <p className="mb-2 text-xs font-black uppercase tracking-[0.16em] text-white/45">{title}</p>
-      <div className="max-h-full space-y-2 overflow-hidden">
+      <div className="max-h-full space-y-2 overflow-auto pr-1">
         {items.length === 0 && <p className="text-sm font-bold text-white/45">{empty}</p>}
         {items.map((item) => (
           <div key={item.id} className="rounded-2xl border border-[#3a3463] bg-[#211d3d] px-3 py-2 shadow-sm">
@@ -397,7 +419,7 @@ function TasksSummary({ data, selectedMemberId }: { data: AppData; selectedMembe
         <MetricPill label="À faire" value={todoTasks.length} />
         <MetricPill label="Faites" value={doneTasks.length} />
       </div>
-      <div className="grid min-h-0 max-h-[76%] grid-cols-2 gap-2">
+      <div className="grid min-h-0 max-h-[76%] grid-cols-2 gap-2 overflow-auto pr-1">
         {members.slice(0, 4).map((member) => {
           const memberTasks = data.tasks.filter((task) => task.personId === member.id && !task.done).slice(0, 2);
           return (
@@ -451,7 +473,7 @@ function ShoppingSummary({ data }: { data: AppData }) {
         <MetricPill label="À acheter" value={todo.length} />
         <MetricPill label="Déjà pris" value={done.length} />
       </div>
-      <div className="min-h-0 max-h-[68%] space-y-2 overflow-hidden">
+      <div className="min-h-0 max-h-[68%] space-y-2 overflow-auto pr-1">
         {todo.slice(0, 4).map((item) => (
           <div key={item.id} className="flex items-center gap-3 rounded-2xl border border-[#3a3463] bg-[#211d3d] px-3 py-2">
             {item.photoUrl ? <img src={item.photoUrl} alt={item.label} className="h-9 w-9 rounded-xl object-cover" /> : <ShoppingBasket className="h-5 w-5 text-[#ffd38a]" />}
@@ -1383,7 +1405,10 @@ function Panel({
       className={`flex min-h-0 cursor-pointer flex-col overflow-hidden rounded-[1.5rem] border border-[#3a3463] bg-[#1d1935] p-4 shadow-glass ${className}`}
     >
       <button
-        onClick={() => onExpand(id)}
+        onClick={(event) => {
+          event.stopPropagation();
+          onExpand(id);
+        }}
         className="mb-3 flex w-full items-center gap-3 text-left"
         title={`Ouvrir ${title} en grand`}
       >
@@ -1395,8 +1420,75 @@ function Panel({
           <Expand className="h-4 w-4" />
         </span>
       </button>
-      <div className="min-h-0 flex-1 overflow-hidden" onClick={(event) => event.stopPropagation()}>{children}</div>
+      <div className="min-h-0 flex-1 overflow-auto pr-1" onClick={(event) => event.stopPropagation()}>{children}</div>
     </article>
+  );
+}
+
+function PanelPinGate({
+  member,
+  title,
+  onCancel,
+  onUnlock,
+}: {
+  member: AppData["familyMembers"][number];
+  title: string;
+  onCancel: () => void;
+  onUnlock: () => void;
+}) {
+  const [pin, setPin] = useState("");
+  const [error, setError] = useState("");
+  const expectedPin = member.pinCode ?? "1234";
+
+  function addDigit(digit: string) {
+    setError("");
+    setPin((current) => `${current}${digit}`.slice(0, 8));
+  }
+
+  function submitPin(nextPin = pin) {
+    if (nextPin === expectedPin) {
+      onUnlock();
+      return;
+    }
+    setError("Code incorrect");
+    setPin("");
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#151229]/80 p-4 backdrop-blur-sm">
+      <section className="w-full max-w-sm rounded-[2rem] border border-[#3a3463] bg-[#1d1935] p-6 text-white shadow-glass">
+        <div className="flex items-center gap-3">
+          <AvatarBubble member={member} />
+          <div>
+            <p className="font-serif text-lg font-black italic text-[#ffd38a]">Code d'accès</p>
+            <h2 className="text-2xl font-black">{title} · {member.name}</h2>
+          </div>
+        </div>
+        <div className="mt-5 flex h-14 items-center justify-center rounded-2xl border border-[#3a3463] bg-[#17142c] text-3xl font-black tracking-[0.35em]">
+          {pin ? "•".repeat(pin.length) : "----"}
+        </div>
+        {error && <p className="mt-3 text-sm font-black text-rose-300">{error}</p>}
+        <div className="mt-5 grid grid-cols-3 gap-2">
+          {["1", "2", "3", "4", "5", "6", "7", "8", "9"].map((digit) => (
+            <button key={digit} type="button" onClick={() => addDigit(digit)} className="min-h-14 rounded-2xl bg-[#34305a] text-xl font-black">
+              {digit}
+            </button>
+          ))}
+          <button type="button" onClick={() => setPin((current) => current.slice(0, -1))} className="min-h-14 rounded-2xl bg-[#211d3d] text-lg font-black">
+            Effacer
+          </button>
+          <button type="button" onClick={() => addDigit("0")} className="min-h-14 rounded-2xl bg-[#34305a] text-xl font-black">
+            0
+          </button>
+          <button type="button" onClick={() => submitPin()} className="min-h-14 rounded-2xl bg-[#ffd38a] text-lg font-black text-[#151229]">
+            OK
+          </button>
+        </div>
+        <button type="button" onClick={onCancel} className="mt-3 min-h-12 w-full rounded-2xl border border-[#3a3463] bg-[#211d3d] font-black text-white">
+          Annuler
+        </button>
+      </section>
+    </div>
   );
 }
 
