@@ -619,12 +619,6 @@ function PersonalApp({
   const isChild = isChildMember(data, memberId);
   const isHome = tab === "home";
 
-  function keepFullscreen() {
-    if (!document.fullscreenElement) {
-      void document.documentElement.requestFullscreen().catch(() => undefined);
-    }
-  }
-
   return (
     <main className="min-h-screen bg-[#151229] pb-4 text-white">
       <div className={`mx-auto flex max-w-3xl flex-col gap-4 px-4 ${isHome ? "py-4" : "py-4"}`}>
@@ -743,9 +737,6 @@ function LauncherHome({
           <button
             type="button"
             onClick={() => {
-              if (!document.fullscreenElement) {
-                void document.documentElement.requestFullscreen().catch(() => undefined);
-              }
               onOpenSettings();
             }}
             className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#34305a] text-[#ffd38a]"
@@ -758,12 +749,7 @@ function LauncherHome({
           {tiles.map((tile) => (
             <button
               key={`${tile.label}-${tile.tab}`}
-              onClick={() => {
-                if (!document.fullscreenElement) {
-                  void document.documentElement.requestFullscreen().catch(() => undefined);
-                }
-                onTabChange(tile.tab);
-              }}
+              onClick={() => onTabChange(tile.tab)}
               className={`group relative min-h-40 overflow-hidden rounded-[1.5rem] border ${tile.className} bg-gradient-to-br text-left text-white shadow-lg transition hover:-translate-y-0.5 hover:border-[#ffd38a]`}
             >
               <span className="pointer-events-none absolute -bottom-10 -right-8 h-36 w-36 rounded-full bg-white/10 transition group-hover:scale-110" />
